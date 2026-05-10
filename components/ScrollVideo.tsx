@@ -94,9 +94,9 @@ export function ScrollVideo() {
             className="pointer-events-none absolute bottom-4 left-4 z-10 text-white transition-opacity duration-200 opacity-100"
           >
             <h3 className="text-lg md:text-xl font-semibold tracking-tight">
-              AI Ad Creative — Brandcure
+              Capabloo MedTech
             </h3>
-            <p className="text-xs md:text-sm text-white/80">Scroll to play</p>
+            <p className="text-xs md:text-sm text-white/80">Scroll to explore</p>
           </div>
 
           <div

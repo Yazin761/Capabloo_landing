@@ -49,6 +49,8 @@ export function NavBar() {
             height={42}
             priority
             className="h-auto w-[132px] md:w-[178px]"
+            style={{ height: "auto" }}
+            sizes="(min-width: 768px) 178px, 132px"
           />
         </Link>
       </div>
