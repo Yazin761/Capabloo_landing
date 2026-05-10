@@ -3,7 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import NavHeader from "@/components/ui/nav-header";
+
+const NAV_ITEMS = [
+  { label: "Home", href: "#home" },
+  { label: "Pricing", href: "#products" },
+  { label: "About", href: "#about" },
+  { label: "Services", href: "#services" },
+  { label: "Contact", href: "#contact" },
+];
 
 export function NavBar() {
   const [moveUp, setMoveUp] = useState(false);
@@ -31,37 +38,32 @@ export function NavBar() {
   }, []);
 
   return (
-    <header className="z-50">
-      <div
-        className={`fixed top-6 left-4 transition-transform duration-300 md:left-8 ${
-          moveUp ? "-translate-y-24" : "translate-y-0"
-        }`}
-      >
-        <Link
-          href="#home"
-          className="inline-flex items-center"
-          aria-label="Capabloo home"
-        >
-          <Image
-            src="/branding/capabloo-logo.png"
-            alt="Capabloo"
-            width={128}
-            height={42}
-            priority
-            className="h-auto w-[132px] md:w-[178px]"
-            style={{ height: "auto" }}
-            sizes="(min-width: 768px) 178px, 132px"
-          />
-        </Link>
-      </div>
+    <header
+      className={`top-nav ${moveUp ? "nav-hidden" : ""}`}
+      role="banner"
+    >
+      <Link href="#home" className="brand-link" aria-label="Capabloo home">
+        <Image
+          src="/branding/capabloo-logo.png"
+          alt="Capabloo"
+          width={320}
+          height={105}
+          priority
+          className="brand-logo"
+          style={{ height: "auto" }}
+          sizes="(max-width: 768px) 220px, 300px"
+        />
+      </Link>
 
-      <div
-        className={`fixed top-7 left-1/2 -translate-x-1/2 transition-transform duration-300 ${
-          moveUp ? "-translate-y-24" : "translate-y-0"
-        }`}
-      >
-        <NavHeader />
-      </div>
+      <nav className="desktop-nav" aria-label="Primary">
+        {NAV_ITEMS.map((item) => (
+          <Link key={item.href} href={item.href}>
+            {item.label}
+          </Link>
+        ))}
+      </nav>
+
+      <div aria-hidden="true" />
     </header>
   );
 }

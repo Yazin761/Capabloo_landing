@@ -1,5 +1,5 @@
 import { NavBar } from "@/components/NavBar";
-import { ScrollVideo } from "@/components/ScrollVideo";
+import { VideoHero } from "@/components/VideoHero";
 import { AnimatedSection } from "@/components/AnimatedSection";
 import { StatCard } from "@/components/StatCard";
 import { Award, ShieldCheck, Target, Wind, Zap } from "lucide-react";
@@ -49,7 +49,7 @@ export default function Home() {
         </AnimatedSection>
       </section>
 
-      <ScrollVideo />
+      <VideoHero />
 
       {/* Scrolling marquee strip */}
       <div className="marquee-section" aria-hidden>

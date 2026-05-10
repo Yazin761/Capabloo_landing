@@ -18,13 +18,15 @@ const TABS: TabItem[] = [
 
 function NavHeader() {
   return (
-    <ul className="relative flex w-fit items-center gap-3 md:gap-4">
-      {TABS.map((tab) => (
-        <Tab key={tab.label} href={tab.href}>
-          {tab.label}
-        </Tab>
-      ))}
-    </ul>
+    <nav aria-label="Primary" className="flex justify-center">
+      <ul className="relative flex w-fit flex-row flex-nowrap items-center justify-center gap-2 sm:gap-3 md:gap-5">
+        {TABS.map((tab) => (
+          <Tab key={tab.label} href={tab.href}>
+            {tab.label}
+          </Tab>
+        ))}
+      </ul>
+    </nav>
   );
 }
 
@@ -38,7 +40,7 @@ const Tab = ({ children, href }: TabProps) => {
     <li className="relative z-10">
       <Link
         href={href}
-        className="block cursor-pointer px-2 py-1 text-xs font-semibold uppercase tracking-wide text-black md:px-3 md:py-1.5 md:text-sm"
+        className="block cursor-pointer whitespace-nowrap px-1.5 py-1 text-[0.65rem] font-bold uppercase tracking-wide text-black sm:px-2 sm:text-xs md:px-3 md:py-1.5 md:text-sm"
       >
         {children}
       </Link>
