@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 
 const clamp01 = (value: number) => Math.min(Math.max(value, 0), 1);
 
-/** Same mapping as GSAP ScrollTrigger: start top/top → end bottom/bottom (window scroll). */
+/** Same mapping as before: section top aligns with viewport top → progress 0 … 1 when section bottom aligns with viewport bottom. */
 function scrollProgressForSection(section: HTMLElement): number {
   const vh = window.innerHeight;
   const scrollY = window.scrollY;
@@ -25,14 +25,116 @@ export function VideoHero() {
 
   useEffect(() => {
     let alive = true;
+    let innerRaf = 0;
+    let installAttempts = 0;
+    const maxInstallAttempts = 90;
 
-    const run = () => {
+    let isMounted = false;
+    let hasMetadata = false;
+    let targetProgress = 0;
+    let smoothProgress = 0;
+    let tickRaf: number | null = null;
+    let scrollCoalesce = 0;
+
+    let section: HTMLElement | null = null;
+    let video: HTMLVideoElement | null = null;
+    let progressBar: HTMLDivElement | null = null;
+    let label: HTMLDivElement | null = null;
+
+    const updateVisuals = () => {
+      if (!progressBar || !label) return;
+      progressBar.style.transform = `scaleX(${smoothProgress})`;
+      if (smoothProgress > 0.06) label.classList.add("video-hero__label--hidden");
+      else label.classList.remove("video-hero__label--hidden");
+    };
+
+    const syncScrollProgress = () => {
+      if (!isMounted || !section) return;
+      targetProgress = scrollProgressForSection(section);
+    };
+
+    const scheduleScrollSync = () => {
+      if (scrollCoalesce) return;
+      scrollCoalesce = requestAnimationFrame(() => {
+        scrollCoalesce = 0;
+        syncScrollProgress();
+      });
+    };
+
+    const tick = () => {
+      if (!isMounted) return;
+      smoothProgress += (targetProgress - smoothProgress) * 0.18;
+      if (Math.abs(targetProgress - smoothProgress) < 0.00035) {
+        smoothProgress = targetProgress;
+      }
+      updateVisuals();
+      if (hasMetadata && video && video.duration > 0 && Number.isFinite(video.duration)) {
+        const targetTime = smoothProgress * video.duration;
+        if (Math.abs(video.currentTime - targetTime) > 0.015) {
+          video.currentTime = targetTime;
+        }
+      }
+      tickRaf = window.requestAnimationFrame(tick);
+    };
+
+    const unlockIOSSeek = () => {
+      if (!video) return;
+      void video.play().then(() => video.pause()).catch(() => {});
+      window.removeEventListener("touchstart", unlockIOSSeek);
+      window.removeEventListener("pointerdown", unlockIOSSeek);
+    };
+
+    const onLoadedMetadata = () => {
+      if (!video) return;
+      hasMetadata = true;
+      video.currentTime = 0;
+      scheduleScrollSync();
+    };
+
+    const onPageShow = (e: PageTransitionEvent) => {
+      if (!e.persisted) return;
+      scheduleScrollSync();
+    };
+
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") scheduleScrollSync();
+    };
+
+    const teardown = () => {
+      isMounted = false;
+      if (tickRaf !== null) {
+        window.cancelAnimationFrame(tickRaf);
+        tickRaf = null;
+      }
+      if (scrollCoalesce) {
+        cancelAnimationFrame(scrollCoalesce);
+        scrollCoalesce = 0;
+      }
+      if (!video || !progressBar || !label) return;
+      video.removeEventListener("loadedmetadata", onLoadedMetadata);
+      window.removeEventListener("touchstart", unlockIOSSeek);
+      window.removeEventListener("pointerdown", unlockIOSSeek);
+      window.removeEventListener("scroll", scheduleScrollSync);
+      window.removeEventListener("resize", scheduleScrollSync);
+      window.removeEventListener("load", scheduleScrollSync);
+      window.removeEventListener("pageshow", onPageShow);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+
+    const tryInstall = () => {
       if (!alive) return;
-      const section = sectionRef.current;
-      const video = videoRef.current;
-      const progressBar = progressRef.current;
-      const label = labelRef.current;
-      if (!section || !video || !progressBar || !label) return;
+      section = sectionRef.current;
+      video = videoRef.current;
+      progressBar = progressRef.current;
+      label = labelRef.current;
+
+      if (!section || !video || !progressBar || !label) {
+        installAttempts += 1;
+        if (installAttempts < maxInstallAttempts) {
+          innerRaf = requestAnimationFrame(tryInstall);
+        }
+        return;
+      }
 
       const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       if (reduceMotion) {
@@ -41,63 +143,10 @@ export function VideoHero() {
         return;
       }
 
-      let hasMetadata = false;
-      let targetProgress = 0;
-      let smoothProgress = 0;
-      let rafId: number | null = null;
-      let isMounted = true;
-      let scrollRaf = 0;
-
-      const updateVisuals = (progress: number) => {
-        progressBar.style.transform = `scaleX(${progress})`;
-        if (progress > 0.06) label.classList.add("video-hero__label--hidden");
-        else label.classList.remove("video-hero__label--hidden");
-      };
-
-      const tick = () => {
-        if (!isMounted) return;
-        smoothProgress += (targetProgress - smoothProgress) * 0.18;
-
-        if (Math.abs(targetProgress - smoothProgress) < 0.00035) {
-          smoothProgress = targetProgress;
-        }
-
-        updateVisuals(smoothProgress);
-
-        if (hasMetadata && video.duration > 0 && Number.isFinite(video.duration)) {
-          const targetTime = smoothProgress * video.duration;
-          if (Math.abs(video.currentTime - targetTime) > 0.015) {
-            video.currentTime = targetTime;
-          }
-        }
-
-        rafId = window.requestAnimationFrame(tick);
-      };
-
-      const syncScrollProgress = () => {
-        if (!isMounted) return;
-        targetProgress = scrollProgressForSection(section);
-      };
-
-      const scheduleScrollSync = () => {
-        if (scrollRaf) return;
-        scrollRaf = requestAnimationFrame(() => {
-          scrollRaf = 0;
-          syncScrollProgress();
-        });
-      };
-
-      const unlockIOSSeek = () => {
-        void video.play().then(() => video.pause()).catch(() => {});
-        window.removeEventListener("touchstart", unlockIOSSeek);
-        window.removeEventListener("pointerdown", unlockIOSSeek);
-      };
-
-      const onLoadedMetadata = () => {
-        hasMetadata = true;
-        video.currentTime = 0;
-        scheduleScrollSync();
-      };
+      isMounted = true;
+      hasMetadata = false;
+      targetProgress = 0;
+      smoothProgress = 0;
 
       video.addEventListener("loadedmetadata", onLoadedMetadata);
       window.addEventListener("touchstart", unlockIOSSeek, { passive: true });
@@ -105,35 +154,21 @@ export function VideoHero() {
       window.addEventListener("scroll", scheduleScrollSync, { passive: true });
       window.addEventListener("resize", scheduleScrollSync, { passive: true });
       window.addEventListener("load", scheduleScrollSync);
+      window.addEventListener("pageshow", onPageShow);
+      document.addEventListener("visibilitychange", onVisibility);
 
       scheduleScrollSync();
-      rafId = window.requestAnimationFrame(tick);
-
-      return () => {
-        isMounted = false;
-        video.removeEventListener("loadedmetadata", onLoadedMetadata);
-        window.removeEventListener("touchstart", unlockIOSSeek);
-        window.removeEventListener("pointerdown", unlockIOSSeek);
-        window.removeEventListener("scroll", scheduleScrollSync);
-        window.removeEventListener("resize", scheduleScrollSync);
-        window.removeEventListener("load", scheduleScrollSync);
-        if (rafId !== null) window.cancelAnimationFrame(rafId);
-        if (scrollRaf) cancelAnimationFrame(scrollRaf);
-      };
+      tickRaf = window.requestAnimationFrame(tick);
     };
 
-    let cleanup: (() => void) | undefined;
-    const raf1 = requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        if (!alive) return;
-        cleanup = run();
-      });
+    innerRaf = requestAnimationFrame(() => {
+      innerRaf = requestAnimationFrame(tryInstall);
     });
 
     return () => {
       alive = false;
-      cancelAnimationFrame(raf1);
-      cleanup?.();
+      cancelAnimationFrame(innerRaf);
+      teardown();
     };
   }, []);
 
