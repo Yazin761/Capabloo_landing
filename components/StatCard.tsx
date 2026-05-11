@@ -1,5 +1,6 @@
 "use client";
 
+import { useInView } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 
 interface Props {
@@ -10,23 +11,14 @@ interface Props {
 
 export function StatCard({ value, label, delay = 0 }: Props) {
   const ref = useRef<HTMLDivElement>(null);
+  const isInView = useInView(ref, { once: true, amount: 0.5 });
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const obs = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setTimeout(() => setVisible(true), delay);
-          obs.unobserve(el);
-        }
-      },
-      { threshold: 0.5 }
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, [delay]);
+    if (!isInView) return;
+    const t = window.setTimeout(() => setVisible(true), delay);
+    return () => window.clearTimeout(t);
+  }, [isInView, delay]);
 
   return (
     <div ref={ref} className={`stat-card${visible ? " stat-visible" : ""}`}>

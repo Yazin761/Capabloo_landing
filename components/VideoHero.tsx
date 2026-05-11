@@ -1,14 +1,21 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-
-if (typeof window !== "undefined") {
-  gsap.registerPlugin(ScrollTrigger);
-}
 
 const clamp01 = (value: number) => Math.min(Math.max(value, 0), 1);
+
+/** Same mapping as GSAP ScrollTrigger: start top/top → end bottom/bottom (window scroll). */
+function scrollProgressForSection(section: HTMLElement): number {
+  const vh = window.innerHeight;
+  const scrollY = window.scrollY;
+  const rect = section.getBoundingClientRect();
+  const sectionTop = scrollY + rect.top;
+  const sectionH = section.offsetHeight;
+  const start = sectionTop;
+  const end = sectionTop + sectionH - vh;
+  if (end <= start) return 1;
+  return clamp01((scrollY - start) / (end - start));
+}
 
 export function VideoHero() {
   const sectionRef = useRef<HTMLElement>(null);
@@ -18,12 +25,6 @@ export function VideoHero() {
 
   useEffect(() => {
     let alive = true;
-
-    const scheduleRefresh = () => {
-      requestAnimationFrame(() => {
-        if (alive) ScrollTrigger.refresh();
-      });
-    };
 
     const run = () => {
       if (!alive) return;
@@ -45,6 +46,7 @@ export function VideoHero() {
       let smoothProgress = 0;
       let rafId: number | null = null;
       let isMounted = true;
+      let scrollRaf = 0;
 
       const updateVisuals = (progress: number) => {
         progressBar.style.transform = `scaleX(${progress})`;
@@ -72,6 +74,19 @@ export function VideoHero() {
         rafId = window.requestAnimationFrame(tick);
       };
 
+      const syncScrollProgress = () => {
+        if (!isMounted) return;
+        targetProgress = scrollProgressForSection(section);
+      };
+
+      const scheduleScrollSync = () => {
+        if (scrollRaf) return;
+        scrollRaf = requestAnimationFrame(() => {
+          scrollRaf = 0;
+          syncScrollProgress();
+        });
+      };
+
       const unlockIOSSeek = () => {
         void video.play().then(() => video.pause()).catch(() => {});
         window.removeEventListener("touchstart", unlockIOSSeek);
@@ -81,29 +96,17 @@ export function VideoHero() {
       const onLoadedMetadata = () => {
         hasMetadata = true;
         video.currentTime = 0;
-        scheduleRefresh();
+        scheduleScrollSync();
       };
 
       video.addEventListener("loadedmetadata", onLoadedMetadata);
       window.addEventListener("touchstart", unlockIOSSeek, { passive: true });
       window.addEventListener("pointerdown", unlockIOSSeek, { passive: true });
+      window.addEventListener("scroll", scheduleScrollSync, { passive: true });
+      window.addEventListener("resize", scheduleScrollSync, { passive: true });
+      window.addEventListener("load", scheduleScrollSync);
 
-      const ctx = gsap.context(() => {
-        ScrollTrigger.create({
-          trigger: section,
-          start: "top top",
-          end: "bottom bottom",
-          scrub: false,
-          onUpdate: (self) => {
-            targetProgress = clamp01(self.progress);
-          },
-        });
-      }, section);
-
-      scheduleRefresh();
-      window.addEventListener("resize", scheduleRefresh);
-      void document.fonts?.ready?.then(scheduleRefresh).catch(() => scheduleRefresh());
-
+      scheduleScrollSync();
       rafId = window.requestAnimationFrame(tick);
 
       return () => {
@@ -111,9 +114,11 @@ export function VideoHero() {
         video.removeEventListener("loadedmetadata", onLoadedMetadata);
         window.removeEventListener("touchstart", unlockIOSSeek);
         window.removeEventListener("pointerdown", unlockIOSSeek);
-        window.removeEventListener("resize", scheduleRefresh);
-        ctx.revert();
+        window.removeEventListener("scroll", scheduleScrollSync);
+        window.removeEventListener("resize", scheduleScrollSync);
+        window.removeEventListener("load", scheduleScrollSync);
         if (rafId !== null) window.cancelAnimationFrame(rafId);
+        if (scrollRaf) cancelAnimationFrame(scrollRaf);
       };
     };
 

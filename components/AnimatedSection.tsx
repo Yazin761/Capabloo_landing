@@ -1,5 +1,6 @@
 "use client";
 
+import { useInView } from "framer-motion";
 import { useEffect, useRef, ReactNode } from "react";
 
 interface Props {
@@ -14,55 +15,24 @@ export function AnimatedSection({
   children, className = "", id, delay = 0, direction = "up",
 }: Props) {
   const ref = useRef<HTMLDivElement>(null);
+  const isInView = useInView(ref, { once: true, amount: "some" });
 
   useEffect(() => {
-    let alive = true;
-    let disconnectObs: (() => void) | undefined;
+    const el = ref.current;
+    if (!el) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      el.classList.add("anim-in");
+    }
+  }, []);
 
-    const raf1 = requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        if (!alive) return;
-        const el = ref.current;
-        if (!el) return;
-
-        if (
-          !window.IntersectionObserver ||
-          window.matchMedia("(prefers-reduced-motion: reduce)").matches
-        ) {
-          el.classList.add("anim-in");
-          return;
-        }
-
-        const rect = el.getBoundingClientRect();
-        if (rect.top < window.innerHeight && rect.bottom > 0) {
-          setTimeout(() => {
-            if (alive) el.classList.add("anim-in");
-          }, delay);
-          return;
-        }
-
-        const obs = new IntersectionObserver(
-          ([entry]) => {
-            if (entry.isIntersecting) {
-              setTimeout(() => {
-                if (alive) el.classList.add("anim-in");
-              }, delay);
-              obs.unobserve(el);
-            }
-          },
-          { threshold: 0, rootMargin: "0px 0px 0px 0px" }
-        );
-        obs.observe(el);
-        disconnectObs = () => obs.disconnect();
-      });
-    });
-
-    return () => {
-      alive = false;
-      cancelAnimationFrame(raf1);
-      disconnectObs?.();
-    };
-  }, [delay]);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (!isInView) return;
+    const t = window.setTimeout(() => el.classList.add("anim-in"), delay);
+    return () => window.clearTimeout(t);
+  }, [isInView, delay]);
 
   return (
     <div
