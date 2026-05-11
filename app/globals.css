@@ -26,7 +26,8 @@ body {
   color: var(--fg);
   font-family: var(--font-geist-sans), "Inter", sans-serif;
   line-height: 1.6;
-  overflow-x: hidden;
+  /* clip avoids a horizontal scroll container; overflow-x:hidden breaks position:sticky in many engines */
+  overflow-x: clip;
   -webkit-font-smoothing: antialiased;
 }
 

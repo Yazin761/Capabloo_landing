@@ -4,7 +4,9 @@ import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
-gsap.registerPlugin(ScrollTrigger);
+if (typeof window !== "undefined") {
+  gsap.registerPlugin(ScrollTrigger);
+}
 
 const clamp01 = (value: number) => Math.min(Math.max(value, 0), 1);
 
@@ -15,86 +17,118 @@ export function VideoHero() {
   const labelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const section = sectionRef.current;
-    const video = videoRef.current;
-    const progressBar = progressRef.current;
-    const label = labelRef.current;
-    if (!section || !video || !progressBar || !label) return;
+    let alive = true;
 
-    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduceMotion) {
-      label.classList.remove("video-hero__label--hidden");
-      progressBar.style.transform = "scaleX(0)";
-      return;
-    }
-
-    let hasMetadata = false;
-    let targetProgress = 0;
-    let smoothProgress = 0;
-    let rafId: number | null = null;
-    let trigger: ScrollTrigger | null = null;
-    let isMounted = true;
-
-    const updateVisuals = (progress: number) => {
-      progressBar.style.transform = `scaleX(${progress})`;
-      if (progress > 0.06) label.classList.add("video-hero__label--hidden");
-      else label.classList.remove("video-hero__label--hidden");
+    const scheduleRefresh = () => {
+      requestAnimationFrame(() => {
+        if (alive) ScrollTrigger.refresh();
+      });
     };
 
-    const tick = () => {
-      if (!isMounted) return;
-      smoothProgress += (targetProgress - smoothProgress) * 0.18;
+    const run = () => {
+      if (!alive) return;
+      const section = sectionRef.current;
+      const video = videoRef.current;
+      const progressBar = progressRef.current;
+      const label = labelRef.current;
+      if (!section || !video || !progressBar || !label) return;
 
-      if (Math.abs(targetProgress - smoothProgress) < 0.00035) {
-        smoothProgress = targetProgress;
+      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (reduceMotion) {
+        label.classList.remove("video-hero__label--hidden");
+        progressBar.style.transform = "scaleX(0)";
+        return;
       }
 
-      updateVisuals(smoothProgress);
+      let hasMetadata = false;
+      let targetProgress = 0;
+      let smoothProgress = 0;
+      let rafId: number | null = null;
+      let isMounted = true;
 
-      if (hasMetadata && video.duration > 0 && Number.isFinite(video.duration)) {
-        const targetTime = smoothProgress * video.duration;
-        if (Math.abs(video.currentTime - targetTime) > 0.015) {
-          video.currentTime = targetTime;
+      const updateVisuals = (progress: number) => {
+        progressBar.style.transform = `scaleX(${progress})`;
+        if (progress > 0.06) label.classList.add("video-hero__label--hidden");
+        else label.classList.remove("video-hero__label--hidden");
+      };
+
+      const tick = () => {
+        if (!isMounted) return;
+        smoothProgress += (targetProgress - smoothProgress) * 0.18;
+
+        if (Math.abs(targetProgress - smoothProgress) < 0.00035) {
+          smoothProgress = targetProgress;
         }
-      }
+
+        updateVisuals(smoothProgress);
+
+        if (hasMetadata && video.duration > 0 && Number.isFinite(video.duration)) {
+          const targetTime = smoothProgress * video.duration;
+          if (Math.abs(video.currentTime - targetTime) > 0.015) {
+            video.currentTime = targetTime;
+          }
+        }
+
+        rafId = window.requestAnimationFrame(tick);
+      };
+
+      const unlockIOSSeek = () => {
+        void video.play().then(() => video.pause()).catch(() => {});
+        window.removeEventListener("touchstart", unlockIOSSeek);
+        window.removeEventListener("pointerdown", unlockIOSSeek);
+      };
+
+      const onLoadedMetadata = () => {
+        hasMetadata = true;
+        video.currentTime = 0;
+        scheduleRefresh();
+      };
+
+      video.addEventListener("loadedmetadata", onLoadedMetadata);
+      window.addEventListener("touchstart", unlockIOSSeek, { passive: true });
+      window.addEventListener("pointerdown", unlockIOSSeek, { passive: true });
+
+      const ctx = gsap.context(() => {
+        ScrollTrigger.create({
+          trigger: section,
+          start: "top top",
+          end: "bottom bottom",
+          scrub: false,
+          onUpdate: (self) => {
+            targetProgress = clamp01(self.progress);
+          },
+        });
+      }, section);
+
+      scheduleRefresh();
+      window.addEventListener("resize", scheduleRefresh);
+      void document.fonts?.ready?.then(scheduleRefresh).catch(() => scheduleRefresh());
 
       rafId = window.requestAnimationFrame(tick);
+
+      return () => {
+        isMounted = false;
+        video.removeEventListener("loadedmetadata", onLoadedMetadata);
+        window.removeEventListener("touchstart", unlockIOSSeek);
+        window.removeEventListener("pointerdown", unlockIOSSeek);
+        window.removeEventListener("resize", scheduleRefresh);
+        ctx.revert();
+        if (rafId !== null) window.cancelAnimationFrame(rafId);
+      };
     };
 
-    const unlockIOSSeek = () => {
-      void video.play().then(() => video.pause()).catch(() => {});
-      window.removeEventListener("touchstart", unlockIOSSeek);
-      window.removeEventListener("pointerdown", unlockIOSSeek);
-    };
-
-    const onLoadedMetadata = () => {
-      hasMetadata = true;
-      video.currentTime = 0;
-    };
-
-    video.addEventListener("loadedmetadata", onLoadedMetadata);
-    window.addEventListener("touchstart", unlockIOSSeek, { passive: true });
-    window.addEventListener("pointerdown", unlockIOSSeek, { passive: true });
-
-    trigger = ScrollTrigger.create({
-      trigger: section,
-      start: "top top",
-      end: "bottom bottom",
-      scrub: false,
-      onUpdate: (self) => {
-        targetProgress = clamp01(self.progress);
-      },
+    let cleanup: (() => void) | undefined;
+    const raf1 = requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (!alive) return;
+        cleanup = run();
+      });
     });
 
-    rafId = window.requestAnimationFrame(tick);
-
     return () => {
-      isMounted = false;
-      video.removeEventListener("loadedmetadata", onLoadedMetadata);
-      window.removeEventListener("touchstart", unlockIOSSeek);
-      window.removeEventListener("pointerdown", unlockIOSSeek);
-      if (trigger) trigger.kill();
-      if (rafId !== null) window.cancelAnimationFrame(rafId);
+      alive = false;
+      cancelAnimationFrame(raf1);
+      cleanup?.();
     };
   }, []);
 

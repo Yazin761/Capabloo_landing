@@ -16,39 +16,52 @@ export function AnimatedSection({
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
+    let alive = true;
+    let disconnectObs: (() => void) | undefined;
 
-    // Immediately reveal if reduced motion or no support
-    if (
-      !window.IntersectionObserver ||
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    ) {
-      el.classList.add("anim-in");
-      return;
-    }
+    const raf1 = requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (!alive) return;
+        const el = ref.current;
+        if (!el) return;
 
-    // If already in view on mount (e.g. hero section), reveal immediately
-    const rect = el.getBoundingClientRect();
-    if (rect.top < window.innerHeight && rect.bottom > 0) {
-      setTimeout(() => el.classList.add("anim-in"), delay);
-      return;
-    }
-
-    const obs = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setTimeout(() => el.classList.add("anim-in"), delay);
-          obs.unobserve(el);
+        if (
+          !window.IntersectionObserver ||
+          window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ) {
+          el.classList.add("anim-in");
+          return;
         }
-      },
-      {
-        threshold: 0,               // fire as soon as 1px enters viewport
-        rootMargin: "0px 0px 0px 0px",
-      }
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
+
+        const rect = el.getBoundingClientRect();
+        if (rect.top < window.innerHeight && rect.bottom > 0) {
+          setTimeout(() => {
+            if (alive) el.classList.add("anim-in");
+          }, delay);
+          return;
+        }
+
+        const obs = new IntersectionObserver(
+          ([entry]) => {
+            if (entry.isIntersecting) {
+              setTimeout(() => {
+                if (alive) el.classList.add("anim-in");
+              }, delay);
+              obs.unobserve(el);
+            }
+          },
+          { threshold: 0, rootMargin: "0px 0px 0px 0px" }
+        );
+        obs.observe(el);
+        disconnectObs = () => obs.disconnect();
+      });
+    });
+
+    return () => {
+      alive = false;
+      cancelAnimationFrame(raf1);
+      disconnectObs?.();
+    };
   }, [delay]);
 
   return (
