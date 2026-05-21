@@ -47,6 +47,13 @@ export default function Home() {
             <span>Human-Centered MedTech</span>
           </div>
         </AnimatedSection>
+        <AnimatedSection direction="up" delay={560}>
+          <div className="hero-scroll-down" aria-hidden>
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <path d="M10 4v12M4 11l6 6 6-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </div>
+        </AnimatedSection>
       </section>
 
       <VideoHero />

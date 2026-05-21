@@ -84,72 +84,294 @@ body::before {
 .floating-cta { position:fixed; bottom:2rem; right:2rem; z-index:49; background:var(--orange); color:#fff; font-size:0.73rem; font-weight:600; letter-spacing:0.04em; padding:0.6rem 1.1rem; border-radius:999px; text-decoration:none; box-shadow:0 4px 24px rgba(245,134,31,0.3); transition:transform 0.25s, box-shadow 0.25s, background 0.2s; }
 .floating-cta:hover { transform:translateY(-3px) scale(1.04); box-shadow:0 8px 36px rgba(245,134,31,0.5); background:var(--orange2); }
 
-/* VIDEO HERO (GSAP SCRUB) */
-.video-hero {
-  position: relative;
-  height: 320svh;
+/* ═══════════════════════════════════════════════════════════════════════════
+   VIDEO HERO — GSAP ScrollTrigger + RAF lerp scrub
+   Background blend target: #F7F4F0
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/*
+ * .vh-wrap  — outer section, height set inline via SECTION_HEIGHT constant
+ *             ScrollTrigger pins the inner sticky while this scrolls
+ * .vh-stage  — viewport-height container (GSAP pins .vh-wrap above it)
+ * .vh-frame  — rounded card that holds video + overlays
+ */
+
+/* Tall scroll track: subtle fill on mobile so scrub range never looks “broken” */
+.vh-wrap {
   width: 100%;
+  align-self: stretch;
+  position: relative;
+  flex-shrink: 0;
 }
-.video-hero__sticky {
+
+.vh-stage {
   position: sticky;
   top: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100dvh;
   height: 100svh;
-  display: grid;
-  place-items: center;
-  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(1.5rem, 3vh, 3rem) clamp(1rem, 3vw, 2.5rem);
+  padding-bottom: max(clamp(1.5rem, 3vh, 3rem), env(safe-area-inset-bottom, 0px));
   background: transparent;
-  padding: 0;
+  touch-action: pan-y;
 }
-.video-hero__frame {
+
+.vh-frame {
   position: relative;
   width: 100%;
-  aspect-ratio: 16 / 8.5;
+  max-width: 1360px;
+  aspect-ratio: 16 / 9;
   overflow: hidden;
-  border-radius: 0;
+  border-radius: 1.25rem;
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.04),
+    0 12px 48px rgba(0, 0, 0, 0.06);
+  will-change: transform;
+  transform: translateZ(0);
 }
-.video-hero__video {
+
+/* ── Video / canvas ─────────────────────────────────────────────────────── */
+.vh-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.vh-video--source {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.vh-video {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
   object-position: center;
   display: block;
 }
-.video-hero__label {
+
+/* ── 4-side edge blend into page background (#F7F4F0 / white) ───────────
+   Multi-stop + radial vignette for a soft, seamless fade (no hard edges) */
+.vh-blend {
   position: absolute;
-  left: clamp(0.8rem, 2vw, 1.5rem);
-  bottom: clamp(0.9rem, 2.2vw, 1.6rem);
-  z-index: 2;
-  color: #fff;
-  transition: opacity 180ms ease;
-}
-.video-hero__label h3 {
-  font-size: clamp(0.95rem, 1.8vw, 1.3rem);
-  font-weight: 700;
-  line-height: 1.2;
-}
-.video-hero__label p {
-  margin-top: 0.2rem;
-  color: rgba(255,255,255,0.82);
-  font-size: clamp(0.7rem, 1.2vw, 0.9rem);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-.video-hero__label--hidden { opacity: 0; }
-.video-hero__progressTrack {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   z-index: 3;
-  height: 3px;
-  background: rgba(255,255,255,0.16);
+  pointer-events: none;
+  background:
+    radial-gradient(
+      ellipse 95% 88% at 50% 50%,
+      transparent 38%,
+      rgba(247, 244, 240, 0.45) 62%,
+      rgba(247, 244, 240, 0.92) 82%,
+      #F7F4F0 100%
+    ),
+    linear-gradient(
+      to bottom,
+      #F7F4F0 0%,
+      rgba(247, 244, 240, 0.92) 6%,
+      rgba(247, 244, 240, 0.55) 14%,
+      rgba(247, 244, 240, 0.18) 24%,
+      transparent 42%
+    ),
+    linear-gradient(
+      to top,
+      #F7F4F0 0%,
+      rgba(247, 244, 240, 0.92) 6%,
+      rgba(247, 244, 240, 0.55) 14%,
+      rgba(247, 244, 240, 0.18) 24%,
+      transparent 42%
+    ),
+    linear-gradient(
+      to right,
+      #F7F4F0 0%,
+      rgba(247, 244, 240, 0.78) 5%,
+      rgba(247, 244, 240, 0.35) 11%,
+      rgba(247, 244, 240, 0.1) 18%,
+      transparent 28%
+    ),
+    linear-gradient(
+      to left,
+      #F7F4F0 0%,
+      rgba(247, 244, 240, 0.78) 5%,
+      rgba(247, 244, 240, 0.35) 11%,
+      rgba(247, 244, 240, 0.1) 18%,
+      transparent 28%
+    );
 }
-.video-hero__progressFill {
+
+/* ── Subtle corner accent marks ─────────────────────────────────────── */
+.vh-corner {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  z-index: 4;
+  pointer-events: none;
+  opacity: 0.35;
+}
+.vh-corner--tl { top: 10px;    left: 10px;  border-top: 1px solid #fff; border-left:  1px solid #fff; }
+.vh-corner--tr { top: 10px;    right: 10px; border-top: 1px solid #fff; border-right: 1px solid #fff; }
+.vh-corner--bl { bottom: 10px; left: 10px;  border-bottom: 1px solid #fff; border-left:  1px solid #fff; }
+.vh-corner--br { bottom: 10px; right: 10px; border-bottom: 1px solid #fff; border-right: 1px solid #fff; }
+
+/* ── Bottom-left label ──────────────────────────────────────────────── */
+.vhl {
+  position: absolute;
+  left:   clamp(0.9rem, 2.5vw, 1.6rem);
+  bottom: clamp(0.9rem, 2.5vw, 1.6rem);
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  color: #fff;
+  transition: opacity 250ms ease;
+}
+.vhl__eyebrow {
+  font-size: clamp(0.82rem, 1.4vw, 1.1rem);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1.2;
+  text-shadow: 0 2px 14px rgba(0,0,0,0.55);
+}
+.vhl__hint {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: clamp(0.6rem, 0.9vw, 0.75rem);
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.72);
+  text-shadow: 0 1px 8px rgba(0,0,0,0.4);
+  animation: vhHintPulse 2.2s ease-in-out infinite;
+}
+@keyframes vhHintPulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.55; }
+}
+
+/* ── Progress bar ───────────────────────────────────────────────────── */
+.vh-pb {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  z-index: 6;
+  height: 3px;
+  background: rgba(255,255,255,0.13);
+}
+.vh-pb__fill {
   width: 100%;
   height: 100%;
   transform-origin: left center;
   transform: scaleX(0);
   background: linear-gradient(90deg, #f5861f, #f9a84d);
+  /* NO CSS transition — RAF drives this directly, transition adds lag */
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MOBILE — full-bleed video hero (no inset above/below the sticky viewport)
+   Nav floats above (z-index); video uses full svh with zero stage padding.
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 900px) {
+  /* Tighter gap before the scrub section */
+  .hero-text-section {
+    padding-bottom: clamp(0.85rem, 2.5vw, 1.35rem);
+  }
+
+  .vh-wrap {
+    touch-action: pan-y;
+    margin: 0;
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.55) 0%,
+      rgba(255, 248, 238, 0.42) 38%,
+      rgba(247, 244, 240, 0.55) 100%
+    );
+  }
+
+  .vh-stage {
+    top: 0;
+    height: 100svh;
+    max-height: 100dvh;
+    padding: 0;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    align-items: stretch;
+    justify-content: stretch;
+  }
+
+  .vh-frame {
+    aspect-ratio: unset;
+    width: 100%;
+    height: 100%;
+    max-height: none;
+    border-radius: 0;
+    box-shadow: none;
+    will-change: auto;
+    margin: 0;
+  }
+
+  .vh-corner--desktop { display: none; }
+
+  /* Tighter blend — frame is now full-bleed so only light edge fade needed */
+  .vh-blend {
+    background:
+      linear-gradient(to bottom, rgba(247,244,240,0.85) 0%, rgba(247,244,240,0.35) 8%,  transparent 22%),
+      linear-gradient(to top,    rgba(247,244,240,0.85) 0%, rgba(247,244,240,0.35) 8%,  transparent 22%),
+      linear-gradient(to right,  rgba(247,244,240,0.65) 0%, rgba(247,244,240,0.2)  6%,  transparent 16%),
+      linear-gradient(to left,   rgba(247,244,240,0.65) 0%, rgba(247,244,240,0.2)  6%,  transparent 16%);
+  }
+
+  /* Label — safe-area aware, compact on small screens */
+  .vhl {
+    left  : max(0.75rem, env(safe-area-inset-left,   0.75rem));
+    bottom: max(0.75rem, env(safe-area-inset-bottom, 0.75rem));
+    gap   : 0.2rem;
+  }
+  .vhl__eyebrow { font-size: 0.8rem; }
+  .vhl__hint    { font-size: 0.58rem; letter-spacing: 0.07em; }
+
+  .marquee-section {
+    padding-top: min(0.55rem, 2vw);
+    padding-bottom: min(0.55rem, 2vw);
+  }
+}
+
+/*
+ * Landscape on phone: the nav auto-hides on scroll (NavBar.tsx adds .nav-hidden),
+ * so the full 100dvh is available — revert the top offset.
+ */
+@media (max-width: 900px) and (orientation: landscape) {
+  .vh-stage {
+    top: 0;
+    height: 100svh;
+    max-height: 100dvh;
+    padding: 0;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}
+
+/* Tiny phones (≤ 390 px) — slightly smaller label */
+@media (max-width: 390px) {
+  .vh-frame { border-radius: 0; }
+  .vhl__eyebrow { font-size: 0.72rem; }
+  .vhl__hint    { font-size: 0.52rem; }
+}
+
+/* ── Reduced motion — GSAP won't init; show static first frame ───── */
+@media (prefers-reduced-motion: reduce) {
+  .vh-stage { height: auto; padding: 1.5rem; }
+  .vh-frame { aspect-ratio: 16 / 9; }
+  .vh-pb    { display: none; }
+  .vhl__hint { animation: none; }
 }
 
 /* HERO */
@@ -172,7 +394,10 @@ body::before {
 .scroll-dot { width:4px; height:4px; background:rgba(255,255,255,0.35); border-radius:50%; animation:pulse 2s ease-in-out infinite; }
 
 /* HERO TEXT */
-.hero-text-section { max-width:860px; width:calc(100% - 2rem); margin:0 auto; padding:1.5rem 0 2.25rem; text-align:center; display:flex; flex-direction:column; align-items:center; }
+.hero-text-section { max-width:860px; width:calc(100% - 2rem); margin:0 auto; padding:clamp(1.5rem,4vh,3rem) 0 clamp(2rem,5vh,4rem); text-align:center; display:flex; flex-direction:column; align-items:center; min-height:calc(100vh - 128px); justify-content:center; }
+/* mobile nav shrinks to 96px */
+@media(max-width:900px) { .hero-text-section { min-height:calc(100svh - 96px); } }
+@media(max-width:600px) { .hero-text-section { min-height:calc(100svh - 96px); width:calc(100% - 1.5rem); } }
 .hero-tagline { display:flex; align-items:center; gap:0.85rem; color:var(--fg-mid); font-size:0.68rem; font-weight:600; letter-spacing:0.18em; text-transform:uppercase; margin-bottom:1.25rem; }
 .hero-tagline::before, .hero-tagline::after { content:""; flex:0 0 32px; height:1px; background:var(--border2); }
 .hero-main-heading { font-size:clamp(2.4rem,6.5vw,5.5rem); line-height:1.04; color:var(--fg); margin-bottom:1.25rem; font-weight:800; letter-spacing:-0.03em; }
@@ -192,6 +417,9 @@ body::before {
 .hero-highlights span:hover { border-color:var(--border2); color:var(--fg); transform:translateY(-2px); }
 .hero-cta { display:inline-flex; align-items:center; background:var(--fg); color:var(--bg); border-radius:999px; padding:0.78rem 1.85rem; text-decoration:none; font-weight:700; font-size:0.85rem; letter-spacing:0.02em; transition:background 0.2s, transform 0.25s; }
 .hero-cta:hover { background:#000; transform:translateY(-2px) scale(1.02); }
+/* Shared bounce keyframe used by hero-scroll-down and video-hero done indicator */
+@keyframes vhdBounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(7px)} }
+.hero-scroll-down { margin-top:2rem; color:var(--border2); animation:vhdBounce 2s ease-in-out infinite; }
 
 /* MARQUEE */
 .marquee-section { border-top:1px solid var(--border); border-bottom:1px solid var(--border); padding:0.85rem 0; overflow:hidden; background:rgba(0,0,0,0.02); }
@@ -470,8 +698,6 @@ body::before {
   .site { padding-top: 96px; }
 }
 @media(max-width:768px) {
-  .video-hero { height: 260svh; }
-  .video-hero__frame { aspect-ratio: 4 / 5; width: min(760px, 100%); }
   .feature-grid { grid-template-columns:1fr; }
   .browser-grid { grid-template-columns:1fr; }
   .tech-grid    { grid-template-columns:1fr; }
@@ -486,11 +712,6 @@ body::before {
   .mid-video-shell { width:calc(100% - 1.5rem); border-radius:0.8rem; }
 }
 @media(prefers-reduced-motion:reduce) {
-  .video-hero { height: auto; }
-  .video-hero__sticky { position: relative; height: auto; }
-  .video-hero__frame { aspect-ratio: 16 / 9; width: min(1180px, 100%); }
-  .video-hero__video { animation: none; }
-  .video-hero__progressTrack { display: none; }
   .anim-base, .stat-card { transition:none !important; }
   .anim-up, .anim-left, .anim-right, .anim-zoom { opacity:1; transform:none; }
   .hero-media-layer { -webkit-mask-image:none; mask-image:none; }

@@ -1,198 +1,418 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useMotionValueEvent, useScroll } from "framer-motion";
 
-const clamp01 = (value: number) => Math.min(Math.max(value, 0), 1);
+// Desktop: all-keyframe scrub encode. Mobile: lighter 720p scrub transcode.
+const VIDEO_DESKTOP = "/video/hero-scrub-g6-scrub.mp4";
+const VIDEO_MOBILE = "/video/hero-scrub-mobile.mp4";
 
-/** Same mapping as before: section top aligns with viewport top → progress 0 … 1 when section bottom aligns with viewport bottom. */
-function scrollProgressForSection(section: HTMLElement): number {
-  const vh = window.innerHeight;
-  const scrollY = window.scrollY;
-  const rect = section.getBoundingClientRect();
-  const sectionTop = scrollY + rect.top;
-  const sectionH = section.offsetHeight;
-  const start = sectionTop;
-  const end = sectionTop + sectionH - vh;
-  if (end <= start) return 1;
-  return clamp01((scrollY - start) / (end - start));
+type PerfConfig = {
+  pinScrollVh: number;
+  progressLerp: number;
+  dprMax: number;
+  seekThreshold: number;
+  featherCanvas: boolean;
+  preload: "auto" | "metadata";
+  isMobile: boolean;
+};
+
+const DEFAULT_PERF: PerfConfig = {
+  pinScrollVh: 3,
+  progressLerp: 0.14,
+  dprMax: 2,
+  seekThreshold: 0.012,
+  featherCanvas: true,
+  preload: "auto",
+  isMobile: false,
+};
+
+function getPerfConfig(): PerfConfig {
+  if (typeof window === "undefined") return DEFAULT_PERF;
+
+  const isMobile = window.matchMedia("(max-width: 768px), (pointer: coarse)").matches;
+  const saveData = window.matchMedia("(prefers-reduced-data: reduce)").matches;
+
+  if (isMobile || saveData) {
+    return {
+      pinScrollVh: 1.15,
+      progressLerp: 0.22,
+      dprMax: 1.25,
+      seekThreshold: 0.045,
+      featherCanvas: false,
+      preload: "metadata",
+      isMobile: true,
+    };
+  }
+
+  return {
+    pinScrollVh: 3,
+    progressLerp: 0.14,
+    dprMax: 2,
+    seekThreshold: 0.012,
+    featherCanvas: true,
+    preload: "auto",
+    isMobile: false,
+  };
+}
+
+function drawCover(
+  ctx: CanvasRenderingContext2D,
+  video: HTMLVideoElement,
+  width: number,
+  height: number,
+  feather: boolean
+) {
+  const vw = video.videoWidth;
+  const vh = video.videoHeight;
+  if (!vw || !vh || !width || !height) return;
+
+  const videoAspect = vw / vh;
+  const canvasAspect = width / height;
+  let sx = 0;
+  let sy = 0;
+  let sw = vw;
+  let sh = vh;
+
+  if (videoAspect > canvasAspect) {
+    sw = vh * canvasAspect;
+    sx = (vw - sw) / 2;
+  } else {
+    sh = vw / canvasAspect;
+    sy = (vh - sh) / 2;
+  }
+
+  ctx.clearRect(0, 0, width, height);
+  ctx.drawImage(video, sx, sy, sw, sh, 0, 0, width, height);
+
+  if (!feather) return;
+
+  const bg = "#F7F4F0";
+  const top = ctx.createLinearGradient(0, 0, 0, height * 0.34);
+  top.addColorStop(0, bg);
+  top.addColorStop(0.35, "rgba(247, 244, 240, 0.55)");
+  top.addColorStop(1, "rgba(247, 244, 240, 0)");
+  ctx.fillStyle = top;
+  ctx.fillRect(0, 0, width, height * 0.34);
+
+  const bottom = ctx.createLinearGradient(0, height, 0, height * 0.66);
+  bottom.addColorStop(0, bg);
+  bottom.addColorStop(0.35, "rgba(247, 244, 240, 0.55)");
+  bottom.addColorStop(1, "rgba(247, 244, 240, 0)");
+  ctx.fillStyle = bottom;
+  ctx.fillRect(0, height * 0.66, width, height * 0.34);
+
+  const left = ctx.createLinearGradient(0, 0, width * 0.22, 0);
+  left.addColorStop(0, bg);
+  left.addColorStop(0.4, "rgba(247, 244, 240, 0.45)");
+  left.addColorStop(1, "rgba(247, 244, 240, 0)");
+  ctx.fillStyle = left;
+  ctx.fillRect(0, 0, width * 0.22, height);
+
+  const right = ctx.createLinearGradient(width, 0, width * 0.78, 0);
+  right.addColorStop(0, bg);
+  right.addColorStop(0.4, "rgba(247, 244, 240, 0.45)");
+  right.addColorStop(1, "rgba(247, 244, 240, 0)");
+  ctx.fillStyle = right;
+  ctx.fillRect(width * 0.78, 0, width * 0.22, height);
 }
 
 export function VideoHero() {
-  const sectionRef = useRef<HTMLElement>(null);
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const frameRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const progressRef = useRef<HTMLDivElement>(null);
   const labelRef = useRef<HTMLDivElement>(null);
 
+  const targetProgressRef = useRef(0);
+  const smoothProgressRef = useRef(0);
+  const hasMetadataRef = useRef(false);
+  const hasInteractedRef = useRef(false);
+  const perfRef = useRef<PerfConfig>(DEFAULT_PERF);
+  const visibleRef = useRef(true);
+
+  const [perf, setPerf] = useState<PerfConfig>(() => DEFAULT_PERF);
+
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start start", "end end"],
+  });
+
+  useMotionValueEvent(scrollYProgress, "change", (value) => {
+    targetProgressRef.current = Math.min(Math.max(value, 0), 1);
+  });
+
   useEffect(() => {
-    let alive = true;
-    let innerRaf = 0;
-    let installAttempts = 0;
-    const maxInstallAttempts = 90;
+    const next = getPerfConfig();
+    perfRef.current = next;
+    setPerf(next);
 
-    let isMounted = false;
-    let hasMetadata = false;
-    let targetProgress = 0;
-    let smoothProgress = 0;
-    let tickRaf: number | null = null;
-    let scrollCoalesce = 0;
+    const mq = window.matchMedia("(max-width: 768px), (pointer: coarse)");
+    const onChange = () => {
+      const updated = getPerfConfig();
+      perfRef.current = updated;
+      setPerf(updated);
+    };
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
 
-    let section: HTMLElement | null = null;
-    let video: HTMLVideoElement | null = null;
-    let progressBar: HTMLDivElement | null = null;
-    let label: HTMLDivElement | null = null;
+  useEffect(() => {
+    const section = sectionRef.current;
+    const frame = frameRef.current;
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    const bar = progressRef.current;
+    const label = labelRef.current;
+    if (!section || !frame || !video || !canvas || !bar || !label) return;
 
-    const updateVisuals = () => {
-      if (!progressBar || !label) return;
-      progressBar.style.transform = `scaleX(${smoothProgress})`;
-      if (smoothProgress > 0.06) label.classList.add("video-hero__label--hidden");
-      else label.classList.remove("video-hero__label--hidden");
+    const ctx = canvas.getContext("2d", { alpha: false, desynchronized: true });
+    if (!ctx) return;
+
+    const mobileSrc = VIDEO_MOBILE;
+    const desktopSrc = VIDEO_DESKTOP;
+    video.src = perf.isMobile ? mobileSrc : desktopSrc;
+    video.preload = perf.preload;
+
+    let rafId = 0;
+    let pendingTime: number | null = null;
+    let seeking = false;
+    let lastPaintedTime = -1;
+    let lastQueuedTime = -1;
+
+    const resizeCanvas = () => {
+      const { dprMax } = perfRef.current;
+      const dpr = Math.min(window.devicePixelRatio || 1, dprMax);
+      const width = frame.clientWidth;
+      const height = frame.clientHeight;
+      if (!width || !height) return;
+
+      canvas.width = Math.round(width * dpr);
+      canvas.height = Math.round(height * dpr);
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${height}px`;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     };
 
-    const syncScrollProgress = () => {
-      if (!isMounted || !section) return;
-      targetProgress = scrollProgressForSection(section);
+    const paint = () => {
+      resizeCanvas();
+      drawCover(
+        ctx,
+        video,
+        frame.clientWidth,
+        frame.clientHeight,
+        perfRef.current.featherCanvas
+      );
     };
 
-    const scheduleScrollSync = () => {
-      if (scrollCoalesce) return;
-      scrollCoalesce = requestAnimationFrame(() => {
-        scrollCoalesce = 0;
-        syncScrollProgress();
-      });
+    const applyUi = (progress: number) => {
+      bar.style.transform = `scaleX(${progress})`;
+      label.style.opacity = progress > 0.06 ? "0" : "1";
     };
 
-    const tick = () => {
-      if (!isMounted) return;
-      smoothProgress += (targetProgress - smoothProgress) * 0.18;
-      if (Math.abs(targetProgress - smoothProgress) < 0.00035) {
-        smoothProgress = targetProgress;
+    const queueSeek = (time: number) => {
+      if (!hasMetadataRef.current || !Number.isFinite(video.duration)) return;
+
+      const { seekThreshold } = perfRef.current;
+      const clamped = Math.min(Math.max(time, 0), Math.max(video.duration - 0.04, 0));
+
+      if (
+        Math.abs(clamped - lastQueuedTime) < seekThreshold &&
+        Math.abs(clamped - video.currentTime) < seekThreshold
+      ) {
+        return;
       }
-      updateVisuals();
-      if (hasMetadata && video && video.duration > 0 && Number.isFinite(video.duration)) {
-        const targetTime = smoothProgress * video.duration;
-        if (Math.abs(video.currentTime - targetTime) > 0.015) {
-          video.currentTime = targetTime;
-        }
+
+      lastQueuedTime = clamped;
+      pendingTime = clamped;
+      if (seeking) return;
+
+      seeking = true;
+      const next = pendingTime;
+      pendingTime = null;
+
+      if (typeof video.fastSeek === "function") {
+        video.fastSeek(next);
+      } else {
+        video.currentTime = next;
       }
-      tickRaf = window.requestAnimationFrame(tick);
     };
 
-    const unlockIOSSeek = () => {
-      if (!video) return;
-      void video.play().then(() => video.pause()).catch(() => {});
-      window.removeEventListener("touchstart", unlockIOSSeek);
-      window.removeEventListener("pointerdown", unlockIOSSeek);
+    const onSeeked = () => {
+      if (Math.abs(video.currentTime - lastPaintedTime) < 0.001) {
+        seeking = false;
+        if (pendingTime !== null) queueSeek(pendingTime);
+        return;
+      }
+
+      lastPaintedTime = video.currentTime;
+      paint();
+      seeking = false;
+      if (pendingTime !== null) queueSeek(pendingTime);
+    };
+
+    const primeVideo = async () => {
+      if (hasInteractedRef.current) return;
+      hasInteractedRef.current = true;
+      try {
+        await video.play();
+        video.pause();
+      } catch {
+        // iOS may require a gesture before seeking works.
+      }
+    };
+
+    const reset = () => {
+      hasMetadataRef.current = false;
+      lastQueuedTime = -1;
+      lastPaintedTime = -1;
+      seeking = false;
+      pendingTime = null;
     };
 
     const onLoadedMetadata = () => {
-      if (!video) return;
-      hasMetadata = true;
-      video.currentTime = 0;
-      scheduleScrollSync();
+      if (!Number.isFinite(video.duration) || video.duration <= 0) return;
+      hasMetadataRef.current = true;
+      resizeCanvas();
+      queueSeek(targetProgressRef.current * video.duration);
     };
 
-    const onPageShow = (e: PageTransitionEvent) => {
-      if (!e.persisted) return;
-      scheduleScrollSync();
-    };
+    const render = () => {
+      if (visibleRef.current) {
+        const { progressLerp } = perfRef.current;
+        const target = targetProgressRef.current;
+        const current = smoothProgressRef.current;
+        const progress = current + (target - current) * progressLerp;
+        smoothProgressRef.current = progress;
 
-    const onVisibility = () => {
-      if (document.visibilityState === "visible") scheduleScrollSync();
-    };
+        applyUi(progress);
 
-    const teardown = () => {
-      isMounted = false;
-      if (tickRaf !== null) {
-        window.cancelAnimationFrame(tickRaf);
-        tickRaf = null;
-      }
-      if (scrollCoalesce) {
-        cancelAnimationFrame(scrollCoalesce);
-        scrollCoalesce = 0;
-      }
-      if (!video || !progressBar || !label) return;
-      video.removeEventListener("loadedmetadata", onLoadedMetadata);
-      window.removeEventListener("touchstart", unlockIOSSeek);
-      window.removeEventListener("pointerdown", unlockIOSSeek);
-      window.removeEventListener("scroll", scheduleScrollSync);
-      window.removeEventListener("resize", scheduleScrollSync);
-      window.removeEventListener("load", scheduleScrollSync);
-      window.removeEventListener("pageshow", onPageShow);
-      document.removeEventListener("visibilitychange", onVisibility);
-    };
-
-    const tryInstall = () => {
-      if (!alive) return;
-      section = sectionRef.current;
-      video = videoRef.current;
-      progressBar = progressRef.current;
-      label = labelRef.current;
-
-      if (!section || !video || !progressBar || !label) {
-        installAttempts += 1;
-        if (installAttempts < maxInstallAttempts) {
-          innerRaf = requestAnimationFrame(tryInstall);
+        if (hasMetadataRef.current && video.duration > 0) {
+          queueSeek(progress * video.duration);
         }
-        return;
       }
 
-      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      if (reduceMotion) {
-        label.classList.remove("video-hero__label--hidden");
-        progressBar.style.transform = "scaleX(0)";
-        return;
-      }
-
-      isMounted = true;
-      hasMetadata = false;
-      targetProgress = 0;
-      smoothProgress = 0;
-
-      video.addEventListener("loadedmetadata", onLoadedMetadata);
-      window.addEventListener("touchstart", unlockIOSSeek, { passive: true });
-      window.addEventListener("pointerdown", unlockIOSSeek, { passive: true });
-      window.addEventListener("scroll", scheduleScrollSync, { passive: true });
-      window.addEventListener("resize", scheduleScrollSync, { passive: true });
-      window.addEventListener("load", scheduleScrollSync);
-      window.addEventListener("pageshow", onPageShow);
-      document.addEventListener("visibilitychange", onVisibility);
-
-      scheduleScrollSync();
-      tickRaf = window.requestAnimationFrame(tick);
+      rafId = requestAnimationFrame(render);
     };
 
-    innerRaf = requestAnimationFrame(() => {
-      innerRaf = requestAnimationFrame(tryInstall);
+    const unlockSeek = () => {
+      void primeVideo();
+    };
+
+    const onScroll = () => {
+      if (!hasInteractedRef.current) void primeVideo();
+    };
+
+    const ro = new ResizeObserver(() => {
+      if (hasMetadataRef.current) paint();
     });
 
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        visibleRef.current = entry?.isIntersecting ?? true;
+        if (visibleRef.current && hasMetadataRef.current) paint();
+      },
+      { rootMargin: "12% 0px" }
+    );
+
+    video.addEventListener("loadedmetadata", onLoadedMetadata);
+    video.addEventListener("seeked", onSeeked);
+    window.addEventListener("pointerdown", unlockSeek, { passive: true });
+    window.addEventListener("touchstart", unlockSeek, { passive: true });
+    window.addEventListener("scroll", onScroll, { passive: true });
+    ro.observe(frame);
+    io.observe(section);
+    video.load();
+
+    let navMo: MutationObserver | undefined;
+    let removeNavResize: (() => void) | undefined;
+    if (!perf.isMobile) {
+      const header = document.querySelector<HTMLElement>(".top-nav");
+      const syncNavGap = () => {
+        const hidden = header?.classList.contains("nav-hidden") ?? false;
+        const gap = hidden ? "12px" : "96px";
+        section.style.setProperty("--vh-nav-gap", gap);
+      };
+      syncNavGap();
+      navMo =
+        header &&
+        new MutationObserver(() => {
+          syncNavGap();
+        });
+      navMo?.observe(header, { attributes: true, attributeFilter: ["class"] });
+      window.addEventListener("resize", syncNavGap, { passive: true });
+      removeNavResize = () => window.removeEventListener("resize", syncNavGap);
+    }
+
+    rafId = requestAnimationFrame(render);
+
     return () => {
-      alive = false;
-      cancelAnimationFrame(innerRaf);
-      teardown();
+      cancelAnimationFrame(rafId);
+      video.removeEventListener("loadedmetadata", onLoadedMetadata);
+      video.removeEventListener("seeked", onSeeked);
+      window.removeEventListener("pointerdown", unlockSeek);
+      window.removeEventListener("touchstart", unlockSeek);
+      window.removeEventListener("scroll", onScroll);
+      ro.disconnect();
+      io.disconnect();
+      navMo?.disconnect();
+      removeNavResize?.();
+      section.style.removeProperty("--vh-nav-gap");
+      reset();
     };
-  }, []);
+  }, [perf]);
+
+  const scrollHeight = perf
+    ? `${(1 + perf.pinScrollVh) * 100}svh`
+    : `${(1 + DEFAULT_PERF.pinScrollVh) * 100}svh`;
 
   return (
-    <section ref={sectionRef} className="video-hero">
-      <div className="video-hero__sticky">
-        <div className="video-hero__frame">
+    <div
+      ref={sectionRef}
+      className="vh-wrap"
+      style={{ height: scrollHeight }}
+    >
+      <div className="vh-stage">
+        <div ref={frameRef} className="vh-frame">
+          <canvas ref={canvasRef} className="vh-canvas" aria-hidden />
+
           <video
             ref={videoRef}
-            className="video-hero__video"
-            src="/video/capabloo-bg.mp4"
+            className="vh-video vh-video--source"
             muted
             playsInline
-            preload="auto"
+            preload={perf.preload}
           />
-          <div ref={labelRef} className="video-hero__label">
-            <h3>Capabloo MedTech</h3>
-            <p>Scroll to explore</p>
+
+          <div className="vh-blend" aria-hidden />
+
+          <div className="vh-corner vh-corner--tl vh-corner--desktop" aria-hidden />
+          <div className="vh-corner vh-corner--tr vh-corner--desktop" aria-hidden />
+          <div className="vh-corner vh-corner--bl vh-corner--desktop" aria-hidden />
+          <div className="vh-corner vh-corner--br vh-corner--desktop" aria-hidden />
+
+          <div ref={labelRef} className="vhl">
+            <span className="vhl__eyebrow">Capabloo MedTech</span>
+            <span className="vhl__hint">
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden>
+                <path
+                  d="M5 1v8M1 5.5l4 3.5 4-3.5"
+                  stroke="currentColor"
+                  strokeWidth="1.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              Scroll to explore
+            </span>
           </div>
-          <div className="video-hero__progressTrack" aria-hidden>
-            <div ref={progressRef} className="video-hero__progressFill" />
+
+          <div className="vh-pb" aria-hidden role="presentation">
+            <div ref={progressRef} className="vh-pb__fill" />
           </div>
         </div>
       </div>
-    </section>
+    </div>
   );
 }
