@@ -124,7 +124,11 @@ body::before {
   position: relative;
   width: 100%;
   max-width: 1360px;
-  aspect-ratio: 16 / 9;
+  aspect-ratio: var(--vh-video-aspect, 16 / 9);
+  max-height: calc(
+    100svh - var(--vh-nav-gap, 96px) - clamp(2.5rem, 5vh, 4rem)
+  );
+  height: auto;
   overflow: hidden;
   border-radius: 1.25rem;
   box-shadow:
@@ -302,17 +306,26 @@ body::before {
     top: 0;
     height: 100svh;
     max-height: 100dvh;
-    padding: 0;
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-    align-items: stretch;
-    justify-content: stretch;
+    padding:
+      max(0.5rem, env(safe-area-inset-top, 0px))
+      max(0.5rem, env(safe-area-inset-right, 0px))
+      max(0.5rem, env(safe-area-inset-bottom, 0px))
+      max(0.5rem, env(safe-area-inset-left, 0px));
+    align-items: center;
+    justify-content: center;
   }
 
   .vh-frame {
-    aspect-ratio: unset;
+    aspect-ratio: var(--vh-video-aspect, 9 / 16);
     width: 100%;
-    height: 100%;
-    max-height: none;
+    height: auto;
+    max-height: calc(
+      100svh
+        - env(safe-area-inset-top, 0px)
+        - env(safe-area-inset-bottom, 0px)
+        - 1rem
+    );
+    max-width: 100%;
     border-radius: 0;
     box-shadow: none;
     will-change: auto;
@@ -354,8 +367,22 @@ body::before {
     top: 0;
     height: 100svh;
     max-height: 100dvh;
-    padding: 0;
-    padding-bottom: env(safe-area-inset-bottom, 0px);
+    padding:
+      max(0.35rem, env(safe-area-inset-top, 0px))
+      max(0.35rem, env(safe-area-inset-right, 0px))
+      max(0.35rem, env(safe-area-inset-bottom, 0px))
+      max(0.35rem, env(safe-area-inset-left, 0px));
+    align-items: center;
+    justify-content: center;
+  }
+
+  .vh-frame {
+    max-height: calc(
+      100svh
+        - env(safe-area-inset-top, 0px)
+        - env(safe-area-inset-bottom, 0px)
+        - 0.5rem
+    );
   }
 }
 
@@ -369,7 +396,7 @@ body::before {
 /* ── Reduced motion — GSAP won't init; show static first frame ───── */
 @media (prefers-reduced-motion: reduce) {
   .vh-stage { height: auto; padding: 1.5rem; }
-  .vh-frame { aspect-ratio: 16 / 9; }
+  .vh-frame { aspect-ratio: var(--vh-video-aspect, 16 / 9); }
   .vh-pb    { display: none; }
   .vhl__hint { animation: none; }
 }

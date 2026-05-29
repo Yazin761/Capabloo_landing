@@ -56,7 +56,15 @@ function getPerfConfig(): PerfConfig {
   };
 }
 
-function drawCover(
+function applyVideoAspect(frame: HTMLElement, video: HTMLVideoElement) {
+  const { videoWidth: vw, videoHeight: vh } = video;
+  if (vw > 0 && vh > 0) {
+    frame.style.setProperty("--vh-video-aspect", `${vw} / ${vh}`);
+  }
+}
+
+/** Fit full frame in view (letterbox) — avoids cropping scrub content when layout is slightly off. */
+function drawContain(
   ctx: CanvasRenderingContext2D,
   video: HTMLVideoElement,
   width: number,
@@ -69,21 +77,22 @@ function drawCover(
 
   const videoAspect = vw / vh;
   const canvasAspect = width / height;
-  let sx = 0;
-  let sy = 0;
-  let sw = vw;
-  let sh = vh;
+  let dw = width;
+  let dh = height;
+  let dx = 0;
+  let dy = 0;
 
   if (videoAspect > canvasAspect) {
-    sw = vh * canvasAspect;
-    sx = (vw - sw) / 2;
+    dh = width / videoAspect;
+    dy = (height - dh) / 2;
   } else {
-    sh = vw / canvasAspect;
-    sy = (vh - sh) / 2;
+    dw = height * videoAspect;
+    dx = (width - dw) / 2;
   }
 
-  ctx.clearRect(0, 0, width, height);
-  ctx.drawImage(video, sx, sy, sw, sh, 0, 0, width, height);
+  ctx.fillStyle = "#F7F4F0";
+  ctx.fillRect(0, 0, width, height);
+  ctx.drawImage(video, 0, 0, vw, vh, dx, dy, dw, dh);
 
   if (!feather) return;
 
@@ -172,6 +181,7 @@ export function VideoHero() {
 
     const mobileSrc = VIDEO_MOBILE;
     const desktopSrc = VIDEO_DESKTOP;
+    frame.style.removeProperty("--vh-video-aspect");
     video.src = perf.isMobile ? mobileSrc : desktopSrc;
     video.preload = perf.preload;
 
@@ -197,7 +207,7 @@ export function VideoHero() {
 
     const paint = () => {
       resizeCanvas();
-      drawCover(
+      drawContain(
         ctx,
         video,
         frame.clientWidth,
@@ -274,6 +284,7 @@ export function VideoHero() {
     const onLoadedMetadata = () => {
       if (!Number.isFinite(video.duration) || video.duration <= 0) return;
       hasMetadataRef.current = true;
+      applyVideoAspect(frame, video);
       resizeCanvas();
       queueSeek(targetProgressRef.current * video.duration);
     };
@@ -370,7 +381,7 @@ export function VideoHero() {
   return (
     <div
       ref={sectionRef}
-      className="vh-wrap"
+      className={`vh-wrap${perf.isMobile ? " vh-wrap--mobile" : ""}`}
       style={{ height: scrollHeight }}
     >
       <div className="vh-stage">
