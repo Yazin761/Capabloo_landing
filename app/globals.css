@@ -165,53 +165,17 @@ body::before {
   display: block;
 }
 
-/* ── 4-side edge blend into page background (#F7F4F0 / white) ───────────
-   Multi-stop + radial vignette for a soft, seamless fade (no hard edges) */
+/* Thin edge soften only — no radial vignette (avoids smoky haze over the video) */
 .vh-blend {
   position: absolute;
   inset: 0;
   z-index: 3;
   pointer-events: none;
   background:
-    radial-gradient(
-      ellipse 95% 88% at 50% 50%,
-      transparent 38%,
-      rgba(247, 244, 240, 0.45) 62%,
-      rgba(247, 244, 240, 0.92) 82%,
-      #F7F4F0 100%
-    ),
-    linear-gradient(
-      to bottom,
-      #F7F4F0 0%,
-      rgba(247, 244, 240, 0.92) 6%,
-      rgba(247, 244, 240, 0.55) 14%,
-      rgba(247, 244, 240, 0.18) 24%,
-      transparent 42%
-    ),
-    linear-gradient(
-      to top,
-      #F7F4F0 0%,
-      rgba(247, 244, 240, 0.92) 6%,
-      rgba(247, 244, 240, 0.55) 14%,
-      rgba(247, 244, 240, 0.18) 24%,
-      transparent 42%
-    ),
-    linear-gradient(
-      to right,
-      #F7F4F0 0%,
-      rgba(247, 244, 240, 0.78) 5%,
-      rgba(247, 244, 240, 0.35) 11%,
-      rgba(247, 244, 240, 0.1) 18%,
-      transparent 28%
-    ),
-    linear-gradient(
-      to left,
-      #F7F4F0 0%,
-      rgba(247, 244, 240, 0.78) 5%,
-      rgba(247, 244, 240, 0.35) 11%,
-      rgba(247, 244, 240, 0.1) 18%,
-      transparent 28%
-    );
+    linear-gradient(to bottom, rgba(247, 244, 240, 0.35) 0%, transparent 7%),
+    linear-gradient(to top, rgba(247, 244, 240, 0.35) 0%, transparent 7%),
+    linear-gradient(to right, rgba(247, 244, 240, 0.22) 0%, transparent 5%),
+    linear-gradient(to left, rgba(247, 244, 240, 0.22) 0%, transparent 5%);
 }
 
 /* ── Subtle corner accent marks ─────────────────────────────────────── */
@@ -294,12 +258,7 @@ body::before {
   .vh-wrap {
     touch-action: pan-y;
     margin: 0;
-    background: linear-gradient(
-      180deg,
-      rgba(255, 255, 255, 0.55) 0%,
-      rgba(255, 248, 238, 0.42) 38%,
-      rgba(247, 244, 240, 0.55) 100%
-    );
+    background: #F7F4F0;
   }
 
   .vh-stage {
@@ -334,13 +293,10 @@ body::before {
 
   .vh-corner--desktop { display: none; }
 
-  /* Tighter blend — frame is now full-bleed so only light edge fade needed */
   .vh-blend {
     background:
-      linear-gradient(to bottom, rgba(247,244,240,0.85) 0%, rgba(247,244,240,0.35) 8%,  transparent 22%),
-      linear-gradient(to top,    rgba(247,244,240,0.85) 0%, rgba(247,244,240,0.35) 8%,  transparent 22%),
-      linear-gradient(to right,  rgba(247,244,240,0.65) 0%, rgba(247,244,240,0.2)  6%,  transparent 16%),
-      linear-gradient(to left,   rgba(247,244,240,0.65) 0%, rgba(247,244,240,0.2)  6%,  transparent 16%);
+      linear-gradient(to bottom, rgba(247, 244, 240, 0.28) 0%, transparent 6%),
+      linear-gradient(to top, rgba(247, 244, 240, 0.28) 0%, transparent 6%);
   }
 
   /* Label — safe-area aware, compact on small screens */

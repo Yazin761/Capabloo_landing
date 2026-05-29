@@ -12,7 +12,6 @@ type PerfConfig = {
   progressLerp: number;
   dprMax: number;
   seekThreshold: number;
-  featherCanvas: boolean;
   preload: "auto" | "metadata";
   isMobile: boolean;
 };
@@ -22,7 +21,6 @@ const DEFAULT_PERF: PerfConfig = {
   progressLerp: 0.14,
   dprMax: 2,
   seekThreshold: 0.012,
-  featherCanvas: true,
   preload: "auto",
   isMobile: false,
 };
@@ -39,7 +37,6 @@ function getPerfConfig(): PerfConfig {
       progressLerp: 0.22,
       dprMax: 1.25,
       seekThreshold: 0.045,
-      featherCanvas: false,
       preload: "metadata",
       isMobile: true,
     };
@@ -50,7 +47,6 @@ function getPerfConfig(): PerfConfig {
     progressLerp: 0.14,
     dprMax: 2,
     seekThreshold: 0.012,
-    featherCanvas: true,
     preload: "auto",
     isMobile: false,
   };
@@ -68,8 +64,7 @@ function drawContain(
   ctx: CanvasRenderingContext2D,
   video: HTMLVideoElement,
   width: number,
-  height: number,
-  feather: boolean
+  height: number
 ) {
   const vw = video.videoWidth;
   const vh = video.videoHeight;
@@ -93,37 +88,6 @@ function drawContain(
   ctx.fillStyle = "#F7F4F0";
   ctx.fillRect(0, 0, width, height);
   ctx.drawImage(video, 0, 0, vw, vh, dx, dy, dw, dh);
-
-  if (!feather) return;
-
-  const bg = "#F7F4F0";
-  const top = ctx.createLinearGradient(0, 0, 0, height * 0.34);
-  top.addColorStop(0, bg);
-  top.addColorStop(0.35, "rgba(247, 244, 240, 0.55)");
-  top.addColorStop(1, "rgba(247, 244, 240, 0)");
-  ctx.fillStyle = top;
-  ctx.fillRect(0, 0, width, height * 0.34);
-
-  const bottom = ctx.createLinearGradient(0, height, 0, height * 0.66);
-  bottom.addColorStop(0, bg);
-  bottom.addColorStop(0.35, "rgba(247, 244, 240, 0.55)");
-  bottom.addColorStop(1, "rgba(247, 244, 240, 0)");
-  ctx.fillStyle = bottom;
-  ctx.fillRect(0, height * 0.66, width, height * 0.34);
-
-  const left = ctx.createLinearGradient(0, 0, width * 0.22, 0);
-  left.addColorStop(0, bg);
-  left.addColorStop(0.4, "rgba(247, 244, 240, 0.45)");
-  left.addColorStop(1, "rgba(247, 244, 240, 0)");
-  ctx.fillStyle = left;
-  ctx.fillRect(0, 0, width * 0.22, height);
-
-  const right = ctx.createLinearGradient(width, 0, width * 0.78, 0);
-  right.addColorStop(0, bg);
-  right.addColorStop(0.4, "rgba(247, 244, 240, 0.45)");
-  right.addColorStop(1, "rgba(247, 244, 240, 0)");
-  ctx.fillStyle = right;
-  ctx.fillRect(width * 0.78, 0, width * 0.22, height);
 }
 
 export function VideoHero() {
@@ -207,13 +171,7 @@ export function VideoHero() {
 
     const paint = () => {
       resizeCanvas();
-      drawContain(
-        ctx,
-        video,
-        frame.clientWidth,
-        frame.clientHeight,
-        perfRef.current.featherCanvas
-      );
+      drawContain(ctx, video, frame.clientWidth, frame.clientHeight);
     };
 
     const applyUi = (progress: number) => {
