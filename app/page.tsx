@@ -5,12 +5,14 @@ import { StatCard } from "@/components/StatCard";
 import { Award, ShieldCheck, Target, Wind, Zap } from "lucide-react";
 
 const MARQUEE_ITEMS = [
-  "3D Printed Prosthetics", "Smart Grip Assist", "Rehabilitation Tech",
-  "Human-Centered Design", "MedTech Innovation", "Affordable Care",
-  "Clinical Solutions", "Ergonomic Devices", "India MedTech",
-  "3D Printed Prosthetics", "Smart Grip Assist", "Rehabilitation Tech",
-  "Human-Centered Design", "MedTech Innovation", "Affordable Care",
-  "Clinical Solutions", "Ergonomic Devices", "India MedTech",
+  "3D Printed Prosthetics",
+  "Smart Grip Assist",
+  "Rehabilitation Tech",
+  "MedTech Innovation",
+  "Affordable Care",
+  "Clinical Solutions",
+  "India MedTech",
+  "Human-Centered Design",
 ];
 
 export default function Home() {
@@ -18,39 +20,39 @@ export default function Home() {
     <main className="site">
       <NavBar />
 
-      {/* Hero text */}
       <section id="home" className="hero-text-section">
         <AnimatedSection direction="up" delay={0}>
           <p className="hero-tagline">Rebuilding Abilities</p>
         </AnimatedSection>
         <AnimatedSection direction="up" delay={100}>
           <h1 className="hero-main-heading">
-            Innovative rehabilitation devices
+            Rehabilitation devices
             <span>for comfort, confidence, and independence.</span>
           </h1>
         </AnimatedSection>
         <AnimatedSection direction="up" delay={200}>
           <p className="hero-main-copy">
-            From custom 3D printed prosthetics to smart grip assist systems — Capabloo
-            MedTech creates affordable, practical tools that improve daily life.
+            Custom prosthetics and smart grip assist — affordable tools built for
+            daily life.
           </p>
         </AnimatedSection>
         <AnimatedSection direction="up" delay={300}>
           <div className="hero-actions">
-            <a href="#about" className="hero-cta">Explore Capabloo</a>
+            <a href="#products" className="hero-cta">
+              Explore products
+            </a>
           </div>
         </AnimatedSection>
-        <AnimatedSection direction="zoom" delay={420}>
-          <div className="hero-highlights">
-            <span>3D Printed Prosthetics</span>
-            <span>Smart Grip Assist</span>
-            <span>Human-Centered MedTech</span>
-          </div>
-        </AnimatedSection>
-        <AnimatedSection direction="up" delay={560}>
+        <AnimatedSection direction="up" delay={420}>
           <div className="hero-scroll-down" aria-hidden>
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-              <path d="M10 4v12M4 11l6 6 6-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              <path
+                d="M10 4v12M4 11l6 6 6-6"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
           </div>
         </AnimatedSection>
@@ -58,10 +60,9 @@ export default function Home() {
 
       <VideoHero />
 
-      {/* Scrolling marquee strip */}
       <div className="marquee-section" aria-hidden>
         <div className="marquee-track">
-          {MARQUEE_ITEMS.map((item, i) => (
+          {[...MARQUEE_ITEMS, ...MARQUEE_ITEMS].map((item, i) => (
             <span key={i} className="marquee-item">
               <span className="marquee-dot" />
               {item}
@@ -72,41 +73,45 @@ export default function Home() {
 
       <div className="section-divider" />
 
-      {/* 01 — About */}
       <AnimatedSection id="about" className="fw-section" direction="up">
         <div className="section-header">
           <span className="section-ghost-num">01</span>
-          <span className="section-header-label">Who We Are</span>
+          <span className="section-header-label">About</span>
         </div>
         <div className="two-col">
-          <h2>About Capabloo MedTech</h2>
+          <h2>Capabloo MedTech</h2>
           <div>
-            <p style={{ marginBottom: "1.5rem" }}>
-              Capabloo develops user-focused rehabilitation devices that are affordable,
-              reliable, and easy to use for patients and clinicians worldwide.
+            <p>
+              User-focused rehabilitation devices that are affordable, reliable,
+              and easy to use — from scan to fit, with dignity at the center.
             </p>
-            <div className="vision-quote-block">
-              <p className="vision-quote">
-                &ldquo;Every design we create carries a life forward.&rdquo;
-              </p>
-            </div>
-            <p style={{ marginTop: "1.5rem" }}>
-              We engineer solutions that combine clinical insights, ergonomic design, and
-              modern manufacturing to rebuild human ability with dignity.
+            <p className="vision-quote" style={{ marginTop: "1.25rem" }}>
+              &ldquo;Every design we create carries a life forward.&rdquo;
             </p>
           </div>
         </div>
 
-        {/* Feature highlights */}
-        <div className="feature-grid" style={{ marginTop: "3.5rem" }}>
+        <div className="feature-grid" style={{ marginTop: "2.5rem" }}>
           {[
-            { icon: Target, title: "Precision Fit", desc: "Patient-specific geometry ensures maximum comfort and clinical alignment for every user." },
-            { icon: Zap, title: "Lightweight Build", desc: "Advanced materials keep devices strong yet feather-light for active daily routines." },
-            { icon: Wind, title: "Smart Ventilation", desc: "Integrated airflow channels reduce heat and moisture — India's first in its class." },
+            {
+              icon: Target,
+              title: "Precision Fit",
+              desc: "Patient-specific geometry for comfort and clinical alignment.",
+            },
+            {
+              icon: Zap,
+              title: "Lightweight Build",
+              desc: "Strong materials, low weight for active daily use.",
+            },
+            {
+              icon: Wind,
+              title: "Smart Ventilation",
+              desc: "Integrated airflow for cooler, longer wear.",
+            },
           ].map(({ icon: Icon, title, desc }) => (
             <div key={title} className="feature-card">
               <span className="feature-icon" aria-hidden>
-                <Icon size={30} strokeWidth={2} />
+                <Icon size={28} strokeWidth={2} />
               </span>
               <h3>{title}</h3>
               <p>{desc}</p>
@@ -117,40 +122,38 @@ export default function Home() {
 
       <div className="section-divider" />
 
-      {/* 02 — Products */}
       <section id="products" className="fw-section">
         <AnimatedSection direction="up">
           <div className="section-header">
             <span className="section-ghost-num">02</span>
-            <span className="section-header-label">What We Build</span>
+            <span className="section-header-label">Products</span>
           </div>
-          <h2>Our Products</h2>
-          <p>Precision-engineered rehabilitation tools designed for real lives.</p>
+          <h2>What we build</h2>
         </AnimatedSection>
 
         <div className="browser-grid">
           {[
             {
-              num: "01", title: "3D Printed Prosthetics", tag: "Flagship",
-              desc: "Customized prosthetic stump sockets designed with precise scanning, reduced pain points, and faster lightweight fabrication."
+              num: "01",
+              title: "3D Printed Prosthetics",
+              tag: "Flagship",
+              desc: "Custom sockets from precise scanning — lighter, faster to fit.",
             },
             {
-              num: "02", title: "Grip Assist Device", tag: "Smart",
-              desc: "Smart ergonomic support for stroke and Parkinson's patients, improving grip stability and day-to-day independence."
+              num: "02",
+              title: "Grip Assist Device",
+              tag: "Smart",
+              desc: "Ergonomic support for steadier grip and daily independence.",
             },
             {
-              num: "03", title: "Built-In Ventilation Socket", tag: "Innovative",
-              desc: "India's first advanced 3D printed socket concept with integrated airflow for greater comfort during long wear sessions."
+              num: "03",
+              title: "Ventilated Socket",
+              tag: "Innovative",
+              desc: "Integrated airflow for comfort during long wear.",
             },
           ].map(({ num, title, tag, desc }, i) => (
-            <AnimatedSection key={num} direction="up" delay={i * 100}>
-              <article className="browser-card">
-                <div className="browser-bar">
-                  <span className="browser-dot browser-dot-r" />
-                  <span className="browser-dot browser-dot-y" />
-                  <span className="browser-dot browser-dot-g" />
-                  <div className="browser-bar-url" />
-                </div>
+            <AnimatedSection key={num} direction="up" delay={i * 80}>
+              <article className="browser-card browser-card--compact">
                 <div className="browser-body">
                   <span className="browser-card-num">PRODUCT — {num}</span>
                   <h3>{title}</h3>
@@ -165,7 +168,6 @@ export default function Home() {
 
       <div className="section-divider" />
 
-      {/* Mid-page brand film */}
       <section className="mid-video-section">
         <div className="mid-video-shell">
           <video
@@ -185,131 +187,115 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 03 — Technology */}
-      <AnimatedSection id="services" className="fw-section" direction="up">
+      <section id="services" className="fw-section">
         <div className="section-header">
           <span className="section-ghost-num">03</span>
-          <span className="section-header-label">Our Technology</span>
+          <span className="section-header-label">Technology</span>
         </div>
-        <h2>How We Build It</h2>
-        <p>The technologies that power every Capabloo device.</p>
+        <h2>How we build it</h2>
 
-        <div className="tech-grid">
+        <div className="tech-grid tech-grid--compact tech-grid--four">
           {[
             {
-              num: "T-01", title: "3D Scanning & Modeling", badge: "Precision",
-              desc: "Patient anatomy captured and converted into optimized socket geometry, reducing fitting time by over 60%."
+              num: "T-01",
+              title: "3D Scanning & Modeling",
+              badge: "Precision",
+              desc: "Anatomy captured and optimized for faster, better fits.",
             },
             {
-              num: "T-02", title: "Additive Manufacturing", badge: "Fabrication",
-              desc: "Fused deposition modeling with clinical-grade polymers for devices that are strong, light, and customizable."
+              num: "T-02",
+              title: "Additive Manufacturing",
+              badge: "Fabrication",
+              desc: "Clinical-grade polymers — strong, light, customizable.",
             },
             {
-              num: "T-03", title: "Airflow Engineering", badge: "Comfort",
-              desc: "Purpose-built internal channels remove heat and moisture, pioneering a new comfort standard in Indian prosthetics."
+              num: "T-03",
+              title: "Airflow Engineering",
+              badge: "Comfort",
+              desc: "Channels that reduce heat and moisture during wear.",
             },
             {
-              num: "T-04", title: "Sensor-Assisted Grip", badge: "Smart",
-              desc: "Resistive feedback technology helps patients rebuild grip confidence through guided pressure response."
+              num: "T-04",
+              title: "Sensor-Assisted Grip",
+              badge: "Smart",
+              desc: "Guided feedback to rebuild grip confidence.",
             },
-            {
-              num: "T-05", title: "Clinical Data Integration", badge: "Research",
-              desc: "Device performance is continuously refined through anonymized patient outcome data and therapist feedback loops."
-            },
-            {
-              num: "T-06", title: "Ergonomic Validation", badge: "Tested",
-              desc: "Every design passes biomechanical stress testing and real-world wear trials before clinical deployment."
-            },
-          ].map(({ num, title, badge, desc }, i) => (
-            <AnimatedSection key={num} direction="up" delay={i * 80}>
-              <div className="tech-card">
-                <span className="tech-num">{num}</span>
-                <h3>{title}</h3>
-                <p>{desc}</p>
-                <span className="tech-badge">{badge}</span>
-              </div>
-            </AnimatedSection>
-          ))}
-        </div>
-      </AnimatedSection>
-
-      {/* Testimonial / mission banner */}
-      <AnimatedSection direction="zoom">
-        <div className="testimonial-section">
-          <div className="testimonial-inner">
-            <p className="testimonial-quote">
-              Building technology that gives people back their <em>freedom to move</em>,
-              their <em>confidence to act</em>, and their <em>dignity to live</em>.
-            </p>
-            <div className="testimonial-author">
-              Capabloo MedTech — Mission Statement
-            </div>
-          </div>
-        </div>
-      </AnimatedSection>
-
-      {/* 04 — Services */}
-      <AnimatedSection id="impact" className="fw-section" direction="up">
-        <div className="section-header">
-          <span className="section-ghost-num">04</span>
-          <span className="section-header-label">What We Do</span>
-        </div>
-        <div style={{ display:"flex", alignItems:"flex-end", justifyContent:"space-between", gap:"2rem", flexWrap:"wrap", marginBottom:"0.5rem" }}>
-          <h2 style={{ margin:0 }}>Services</h2>
-          <p className="section-desc" style={{ maxWidth:"44ch", marginBottom:0 }}>
-            We work with hospitals, physio centers, and care teams to deliver
-            personalized rehabilitation from assessment to deployment.
-          </p>
-        </div>
-        <div className="process-grid">
-          {[
-            ["01","Clinical Assessment Support","Need-based design using patient movement and comfort data."],
-            ["02","Custom Device Design","Patient-specific geometry and fit optimization with 3D workflows."],
-            ["03","Rapid Prototyping","From scan to wearable prototype in days, not weeks."],
-            ["04","Rehab Integration","Solutions aligned with therapeutic programs for real outcomes."],
-            ["05","Ventilation Engineering","Airflow channels reduce heat and moisture during wear."],
-            ["06","Ongoing Clinical Support","Iterative refinement based on patient feedback and outcomes."],
-          ].map(([num, title, desc]) => (
-            <div key={num} className="process-grid-item">
-              <span className="process-grid-num">{num}</span>
+          ].map(({ num, title, badge, desc }) => (
+            <div key={num} className="tech-card">
+              <span className="tech-num">{num}</span>
               <h3>{title}</h3>
               <p>{desc}</p>
+              <span className="tech-badge">{badge}</span>
             </div>
           ))}
         </div>
-      </AnimatedSection>
+
+        <div id="impact" className="fw-section__follow">
+          <div className="section-header">
+            <span className="section-ghost-num">04</span>
+            <span className="section-header-label">Services & impact</span>
+          </div>
+          <h2>What we deliver</h2>
+          <p className="section-desc">
+            From clinical assessment to deployment — with hospitals and care teams.
+          </p>
+
+          <div className="process-grid process-grid--compact process-grid--four">
+            {[
+              ["01", "Assessment & design", "Need-based fit from movement and comfort data."],
+              ["02", "Rapid prototyping", "Scan to wearable prototype in days."],
+              ["03", "Rehab integration", "Aligned with therapeutic programs."],
+              ["04", "Clinical support", "Iterative refinement from real outcomes."],
+            ].map(([num, title, desc]) => (
+              <div key={num} className="process-grid-item">
+                <span className="process-grid-num">{num}</span>
+                <h3>{title}</h3>
+                <p>{desc}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="stats-grid stats-grid--three">
+            <StatCard
+              value="01"
+              label="India's first 3D printed socket with integrated airflow concept."
+              delay={0}
+            />
+            <StatCard
+              value="03+"
+              label="Clinical and physiotherapy partners."
+              delay={120}
+            />
+            <StatCard
+              value="100%"
+              label="Patient-centric, affordable medtech focus."
+              delay={240}
+            />
+          </div>
+        </div>
+      </section>
 
       <div className="section-divider" />
 
-      {/* 05 — Impact stats */}
-      <AnimatedSection direction="up" className="fw-section">
-        <div className="section-header">
-          <span className="section-ghost-num">05</span>
-          <span className="section-header-label">Our Impact</span>
-        </div>
-        <h2>Impact &amp; Vision</h2>
-        <div className="stats-grid">
-          <StatCard value="01" label="India's first advanced 3D printed socket with integrated airflow concept." delay={0} />
-          <StatCard value="03+" label="Clinical and physiotherapy ecosystem collaborators actively partnered." delay={150} />
-          <StatCard value="100%" label="Focused on affordable and patient-centric medtech innovation." delay={300} />
-          <StatCard value="∞" label="Lives we aim to improve through accessible, dignified rehabilitation." delay={450} />
-        </div>
-      </AnimatedSection>
-
-      {/* 06 — Contact CTA */}
       <AnimatedSection id="contact" className="cta-section" direction="up">
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "1rem", marginBottom: "1.5rem" }}>
-          <span className="section-ghost-num">06</span>
-          <span style={{ fontSize: "0.68rem", fontWeight: 500, color: "var(--fg-mid)", letterSpacing: "0.12em", textTransform: "uppercase" }}>Get In Touch</span>
+        <div className="section-header" style={{ justifyContent: "center", border: "none", marginBottom: "1rem" }}>
+          <span className="section-ghost-num">05</span>
+          <span className="section-header-label">Contact</span>
         </div>
-        <h2>Partner with<br />Capabloo.</h2>
-        <p>
-          Collaborate with us for patient-centric devices and rehabilitation
-          solutions built for real-world outcomes.
-        </p>
+        <h2>Partner with Capabloo</h2>
+        <p>Clinical partnerships and device inquiries welcome.</p>
         <div className="cta-links">
-          <a href="mailto:contact@capabloo.com" className="cta-btn primary">contact@capabloo.com</a>
-          <a href="https://www.capabloo.com" target="_blank" rel="noreferrer" className="cta-btn secondary">www.capabloo.com ↗</a>
+          <a href="mailto:contact@capabloo.com" className="cta-btn primary">
+            contact@capabloo.com
+          </a>
+          <a
+            href="https://www.capabloo.com"
+            target="_blank"
+            rel="noreferrer"
+            className="cta-btn secondary"
+          >
+            capabloo.com ↗
+          </a>
         </div>
       </AnimatedSection>
 
@@ -341,10 +327,11 @@ export default function Home() {
       </AnimatedSection>
 
       <footer className="site-footer">
-        <p>© {new Date().getFullYear()} Capabloo MedTech. All rights reserved.</p>
+        <p>© {new Date().getFullYear()} Capabloo MedTech</p>
         <div className="site-footer-links">
           <a href="#home">Home</a>
           <a href="#about">About</a>
+          <a href="#products">Products</a>
           <a href="#contact">Contact</a>
         </div>
       </footer>

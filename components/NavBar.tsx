@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { NavMenuButton } from "@/components/ui/nav-menu-button";
 
 const NAV_ITEMS = [
   { label: "Home", href: "#home" },
@@ -14,6 +15,7 @@ const NAV_ITEMS = [
 
 export function NavBar() {
   const [moveUp, setMoveUp] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const prevY = useRef(0);
 
   useEffect(() => {
@@ -37,33 +39,63 @@ export function NavBar() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  useEffect(() => {
+    document.body.style.overflow = menuOpen ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [menuOpen]);
+
+  const closeMenu = () => setMenuOpen(false);
+
   return (
-    <header
-      className={`top-nav ${moveUp ? "nav-hidden" : ""}`}
-      role="banner"
-    >
-      <Link href="#home" className="brand-link" aria-label="Capabloo home">
-        <Image
-          src="/branding/capabloo-logo.png"
-          alt="Capabloo"
-          width={320}
-          height={105}
-          priority
-          className="brand-logo"
-          style={{ height: "auto" }}
-          sizes="(max-width: 768px) 220px, 300px"
+    <>
+      <header
+        className={`top-nav ${moveUp ? "nav-hidden" : ""}`}
+        role="banner"
+      >
+        <Link href="#home" className="brand-link" aria-label="Capabloo home">
+          <Image
+            src="/branding/capabloo-logo.png"
+            alt="Capabloo"
+            width={320}
+            height={105}
+            priority
+            className="brand-logo"
+            style={{ height: "auto" }}
+            sizes="(max-width: 768px) 220px, 300px"
+          />
+        </Link>
+
+        <NavMenuButton
+          open={menuOpen}
+          onToggle={() => setMenuOpen((open) => !open)}
+          controlsId="nav-drawer"
         />
-      </Link>
+      </header>
 
-      <nav className="desktop-nav" aria-label="Primary">
-        {NAV_ITEMS.map((item) => (
-          <Link key={item.href} href={item.href}>
-            {item.label}
-          </Link>
-        ))}
-      </nav>
+      {menuOpen && (
+        <button
+          type="button"
+          className="drawer-overlay"
+          aria-label="Close menu"
+          onClick={closeMenu}
+        />
+      )}
 
-      <div aria-hidden="true" />
-    </header>
+      <aside
+        id="nav-drawer"
+        className={`mobile-drawer ${menuOpen ? "open" : ""}`}
+        aria-hidden={!menuOpen}
+      >
+        <nav aria-label="Primary">
+          {NAV_ITEMS.map((item) => (
+            <Link key={item.href} href={item.href} onClick={closeMenu}>
+              {item.label}
+            </Link>
+          ))}
+        </nav>
+      </aside>
+    </>
   );
 }
