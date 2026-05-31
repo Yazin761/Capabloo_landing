@@ -1,8 +1,49 @@
+import Image from "next/image";
 import { NavBar } from "@/components/NavBar";
 import { VideoHero } from "@/components/VideoHero";
 import { AnimatedSection } from "@/components/AnimatedSection";
 import { StatCard } from "@/components/StatCard";
 import { Award, ShieldCheck, Target, Wind, Zap } from "lucide-react";
+import { InstagramIcon, LinkedInIcon } from "@/components/ui/social-icons";
+
+const SOCIAL_LINKS = [
+  {
+    label: "Capabloo on Instagram",
+    href: "https://www.instagram.com/capabloo_com?igsh=MXFwZ3Q3aDR3ZTZ5OA%3D%3D&utm_source=qr",
+    icon: InstagramIcon,
+  },
+  {
+    label: "Capabloo on LinkedIn",
+    href: "https://www.linkedin.com/company/capabloomedtech/",
+    icon: LinkedInIcon,
+  },
+] as const;
+
+const PRODUCTS = [
+  {
+    num: "01",
+    title: "3D Printed Prosthetics",
+    tag: "Flagship",
+    image: "/products/prosthetics-product.png",
+    imageAlt:
+      "Capabloo 3D printed prosthetic socket — custom fit and built-in ventilation",
+    detail: [
+      "India’s first advanced socket with built-in airflow.",
+      "Custom fit from scan — lighter, less pain, better mobility.",
+    ],
+  },
+  {
+    num: "02",
+    title: "Grip Assist Device",
+    tag: "Smart",
+    image: "/products/grip-assist-product.png",
+    imageAlt: "Capabloo Grip Assist device",
+    detail: [
+      "Ergonomic support for steadier grip and daily control.",
+      "For stroke recovery, Parkinson’s care, and reduced hand strength.",
+    ],
+  },
+];
 
 const MARQUEE_ITEMS = [
   "3D Printed Prosthetics",
@@ -131,33 +172,33 @@ export default function Home() {
           <h2>What we build</h2>
         </AnimatedSection>
 
-        <div className="browser-grid">
-          {[
-            {
-              num: "01",
-              title: "3D Printed Prosthetics",
-              tag: "Flagship",
-              desc: "Custom sockets from precise scanning — lighter, faster to fit.",
-            },
-            {
-              num: "02",
-              title: "Grip Assist Device",
-              tag: "Smart",
-              desc: "Ergonomic support for steadier grip and daily independence.",
-            },
-            {
-              num: "03",
-              title: "Ventilated Socket",
-              tag: "Innovative",
-              desc: "Integrated airflow for comfort during long wear.",
-            },
-          ].map(({ num, title, tag, desc }, i) => (
-            <AnimatedSection key={num} direction="up" delay={i * 80}>
-              <article className="browser-card browser-card--compact">
-                <div className="browser-body">
+        <div className="browser-grid browser-grid--products">
+          {PRODUCTS.map(({ num, title, tag, image, imageAlt, detail }, i) => (
+            <AnimatedSection
+              key={num}
+              className="product-card-wrap"
+              direction="up"
+              delay={i * 80}
+            >
+              <article className="product-card">
+                <div className="product-card__media">
+                  <Image
+                    src={image}
+                    alt={imageAlt}
+                    fill
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                    className="product-card__img"
+                    priority={i === 0}
+                  />
+                </div>
+                <div className="product-card__body product-card__body--minimal">
                   <span className="browser-card-num">PRODUCT — {num}</span>
                   <h3>{title}</h3>
-                  <p>{desc}</p>
+                  <div className="product-card__detail">
+                    {detail.map((line) => (
+                      <p key={line}>{line}</p>
+                    ))}
+                  </div>
                   <span className="card-tag">{tag}</span>
                 </div>
               </article>
@@ -304,15 +345,15 @@ export default function Home() {
           <ShieldCheck size={20} />
           <span>Certified Quality System</span>
         </div>
-        <h3>ISO 13485 Certified</h3>
+        <h3>ISO 9001 Certified</h3>
         <p>
-          Capabloo MedTech operates under an ISO 13485 certified quality
+          Capabloo MedTech operates under an ISO 9001 certified quality
           management framework for medical device design and development.
         </p>
         <div className="iso-meta">
           <span>
             <Award size={15} />
-            Certificate No: CAP-ISO-13485-2026
+            Certificate No: CAP-ISO-9001-2026
           </span>
           <span>Status: Active</span>
         </div>
@@ -328,11 +369,27 @@ export default function Home() {
 
       <footer className="site-footer">
         <p>© {new Date().getFullYear()} Capabloo MedTech</p>
-        <div className="site-footer-links">
-          <a href="#home">Home</a>
-          <a href="#about">About</a>
-          <a href="#products">Products</a>
-          <a href="#contact">Contact</a>
+        <div className="site-footer-right">
+          <div className="site-footer-social" aria-label="Social media">
+            {SOCIAL_LINKS.map(({ label, href, icon: Icon }) => (
+              <a
+                key={href}
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="site-footer-social__link"
+                aria-label={label}
+              >
+                <Icon size={20} />
+              </a>
+            ))}
+          </div>
+          <div className="site-footer-links">
+            <a href="#home">Home</a>
+            <a href="#about">About</a>
+            <a href="#products">Products</a>
+            <a href="#contact">Contact</a>
+          </div>
         </div>
       </footer>
     </main>
