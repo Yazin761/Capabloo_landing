@@ -31,9 +31,13 @@
 }
 
 /* auto keeps scroll-linked UI in sync (smooth + scrubbed scroll often misbehave together) */
-html { scroll-behavior: auto; }
+html {
+  scroll-behavior: auto;
+  position: relative;
+}
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 body {
+  position: relative;
   background: var(--bg);
   color: var(--fg);
   font-family: var(--font-geist-sans), "Inter", sans-serif;
@@ -60,7 +64,13 @@ body::before {
 .scroll-bar { position:fixed; top:0; left:0; right:0; height:2px; z-index:100; background:transparent; }
 .scroll-bar-fill { height:100%; background:linear-gradient(90deg, var(--orange), var(--orange2)); }
 
-.site { display:flex; flex-direction:column; min-height:100vh; padding-top: 128px; }
+.site {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  padding-top: 128px;
+}
 
 /* NAV — logo top-left, three-dot menu top-right */
 .top-nav {
@@ -583,6 +593,13 @@ body::before {
   object-fit: contain;
   object-position: center;
 }
+.product-card__media--grip-photo {
+  background: #f3f3f3;
+}
+.product-card__media--grip-photo .product-card__img {
+  object-fit: cover;
+  object-position: center 42%;
+}
 .product-card__body {
   flex: 1;
   display: flex;
@@ -832,6 +849,57 @@ body::before {
   transform: translateY(-2px);
   border-color: var(--orange);
   background: rgba(245,134,31,0.08);
+}
+
+/* INCUBATION PARTNERS */
+.partners-section {
+  width: min(980px, calc(100% - 2rem));
+  margin: 0 auto 2rem;
+  padding: clamp(2rem, 4vh, 2.75rem) 1.25rem;
+  text-align: center;
+  border-top: 1px solid var(--border);
+}
+.partners-section__label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--fg-mid);
+  margin-bottom: 1.25rem;
+}
+.partners-grid {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+  padding: 0;
+  margin: 0;
+}
+.partners-grid__item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 3.25rem;
+  padding: 0.85rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.65rem;
+  background: rgba(255, 255, 255, 0.7);
+  font-size: clamp(0.68rem, 1.1vw, 0.78rem);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1.35;
+  color: var(--fg);
+  text-transform: uppercase;
+}
+@media (max-width: 900px) {
+  .partners-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 480px) {
+  .partners-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* FOOTER */

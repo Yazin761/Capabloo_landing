@@ -19,6 +19,13 @@ const SOCIAL_LINKS = [
   },
 ] as const;
 
+const INCUBATION_PARTNERS = [
+  "ITEL Foundation",
+  "Derby Foundation",
+  "Sathyabama Startup Cell",
+  "EDII TN",
+] as const;
+
 const PRODUCTS = [
   {
     num: "01",
@@ -31,13 +38,15 @@ const PRODUCTS = [
       "India’s first advanced socket with built-in airflow.",
       "Custom fit from scan — lighter, less pain, better mobility.",
     ],
+    mediaClass: "",
   },
   {
     num: "02",
     title: "Grip Assist Device",
     tag: "Smart",
-    image: "/products/grip-assist-product.png",
-    imageAlt: "Capabloo Grip Assist device",
+    image: "/products/grip-assist-in-use.png",
+    imageAlt: "Capabloo Grip Assist on a bottle — ergonomic hand support in use",
+    mediaClass: "product-card__media--grip-photo",
     detail: [
       "Ergonomic support for steadier grip and daily control.",
       "For stroke recovery, Parkinson’s care, and reduced hand strength.",
@@ -173,7 +182,7 @@ export default function Home() {
         </AnimatedSection>
 
         <div className="browser-grid browser-grid--products">
-          {PRODUCTS.map(({ num, title, tag, image, imageAlt, detail }, i) => (
+          {PRODUCTS.map(({ num, title, tag, image, imageAlt, detail, mediaClass }, i) => (
             <AnimatedSection
               key={num}
               className="product-card-wrap"
@@ -181,7 +190,7 @@ export default function Home() {
               delay={i * 80}
             >
               <article className="product-card">
-                <div className="product-card__media">
+                <div className={`product-card__media ${mediaClass}`.trim()}>
                   <Image
                     src={image}
                     alt={imageAlt}
@@ -365,6 +374,17 @@ export default function Home() {
         >
           View Certificate
         </a>
+      </AnimatedSection>
+
+      <AnimatedSection direction="up" className="partners-section">
+        <p className="partners-section__label">Incubation partners</p>
+        <ul className="partners-grid">
+          {INCUBATION_PARTNERS.map((name) => (
+            <li key={name} className="partners-grid__item">
+              {name}
+            </li>
+          ))}
+        </ul>
       </AnimatedSection>
 
       <footer className="site-footer">
