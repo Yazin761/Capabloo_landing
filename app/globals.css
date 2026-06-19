@@ -576,10 +576,22 @@ body::before {
   background: var(--card-bg);
   transition: border-color 0.35s, transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.35s;
 }
+.product-card--button {
+  appearance: none;
+  border-color: var(--border);
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
 .product-card:hover {
   border-color: var(--border2);
   transform: translateY(-6px);
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12);
+}
+.product-card:focus-visible {
+  outline: 2px solid var(--orange);
+  outline-offset: 4px;
 }
 .product-card__media {
   position: relative;
@@ -628,6 +640,14 @@ body::before {
 .product-card__body--minimal h3 {
   margin-bottom: 0.5rem;
 }
+.product-card__title {
+  display: block;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--fg);
+  margin-bottom: 0.5rem;
+  line-height: 1.3;
+}
 .product-card__detail {
   display: flex;
   flex-direction: column;
@@ -641,6 +661,11 @@ body::before {
   color: var(--fg-mid);
   margin: 0;
 }
+.product-card__detail span {
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--fg-mid);
+}
 .product-card__body .card-tag {
   margin-top: auto;
   align-self: flex-start;
@@ -648,6 +673,131 @@ body::before {
 .product-card__body--minimal .card-tag {
   margin-top: auto;
 }
+
+/* PRODUCT ENQUIRY MODAL */
+.product-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+.product-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(17, 17, 17, 0.38);
+  backdrop-filter: blur(10px);
+  cursor: pointer;
+}
+.product-modal__panel {
+  position: relative;
+  z-index: 1;
+  width: min(520px, 100%);
+  max-height: min(720px, calc(100dvh - 2rem));
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.24);
+  padding: clamp(1.25rem, 4vw, 1.75rem);
+}
+.product-modal__close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--fg);
+  cursor: pointer;
+  font-size: 1.25rem;
+  line-height: 1;
+}
+.product-modal__eyebrow {
+  color: var(--orange);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin-bottom: 0.4rem;
+}
+.product-modal h3 {
+  color: var(--fg);
+  font-size: clamp(1.45rem, 4vw, 2rem);
+  line-height: 1.1;
+  margin-bottom: 0.5rem;
+}
+.product-modal__copy {
+  color: var(--fg-mid);
+  font-size: 0.9rem;
+  line-height: 1.65;
+  margin-bottom: 1.25rem;
+}
+.product-form {
+  display: grid;
+  gap: 0.9rem;
+}
+.product-form label {
+  display: grid;
+  gap: 0.35rem;
+  color: var(--fg);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.product-form input,
+.product-form textarea {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 0.65rem;
+  background: #fff;
+  color: var(--fg);
+  font: inherit;
+  padding: 0.72rem 0.8rem;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.product-form textarea {
+  resize: vertical;
+}
+.product-form input:focus,
+.product-form textarea:focus {
+  border-color: rgba(245, 134, 31, 0.7);
+  box-shadow: 0 0 0 3px rgba(245, 134, 31, 0.12);
+}
+.product-form__submit {
+  margin-top: 0.25rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--fg);
+  color: var(--bg);
+  cursor: pointer;
+  font-size: 0.86rem;
+  font-weight: 700;
+  padding: 0.84rem 1.2rem;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+.product-form__submit:hover {
+  background: #000;
+  transform: translateY(-2px);
+}
+.product-form__submit:disabled {
+  cursor: wait;
+  opacity: 0.7;
+  transform: none;
+}
+.product-form__status {
+  font-size: 0.82rem;
+  line-height: 1.5;
+  margin: 0;
+}
+.product-form__status.success { color: #0b7a43; }
+.product-form__status.error { color: #b42318; }
 
 /* MID VIDEO */
 .mid-video-section {

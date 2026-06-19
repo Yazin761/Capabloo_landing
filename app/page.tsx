@@ -1,8 +1,8 @@
-import Image from "next/image";
 import { NavBar } from "@/components/NavBar";
 import { VideoHero } from "@/components/VideoHero";
 import { AnimatedSection } from "@/components/AnimatedSection";
 import { StatCard } from "@/components/StatCard";
+import { ProductInquiry } from "@/components/ProductInquiry";
 import { Award, ShieldCheck, Target, Wind, Zap } from "lucide-react";
 import { InstagramIcon, LinkedInIcon } from "@/components/ui/social-icons";
 
@@ -181,39 +181,7 @@ export default function Home() {
           <h2>What we build</h2>
         </AnimatedSection>
 
-        <div className="browser-grid browser-grid--products">
-          {PRODUCTS.map(({ num, title, tag, image, imageAlt, detail, mediaClass }, i) => (
-            <AnimatedSection
-              key={num}
-              className="product-card-wrap"
-              direction="up"
-              delay={i * 80}
-            >
-              <article className="product-card">
-                <div className={`product-card__media ${mediaClass}`.trim()}>
-                  <Image
-                    src={image}
-                    alt={imageAlt}
-                    fill
-                    sizes="(max-width: 768px) 100vw, 50vw"
-                    className="product-card__img"
-                    priority={i === 0}
-                  />
-                </div>
-                <div className="product-card__body product-card__body--minimal">
-                  <span className="browser-card-num">PRODUCT — {num}</span>
-                  <h3>{title}</h3>
-                  <div className="product-card__detail">
-                    {detail.map((line) => (
-                      <p key={line}>{line}</p>
-                    ))}
-                  </div>
-                  <span className="card-tag">{tag}</span>
-                </div>
-              </article>
-            </AnimatedSection>
-          ))}
-        </div>
+        <ProductInquiry products={PRODUCTS} />
       </section>
 
       <div className="section-divider" />
@@ -377,7 +345,7 @@ export default function Home() {
       </AnimatedSection>
 
       <AnimatedSection direction="up" className="partners-section">
-        <p className="partners-section__label">Incubation partners</p>
+        <p className="partners-section__label">Backed up By</p>
         <ul className="partners-grid">
           {INCUBATION_PARTNERS.map((name) => (
             <li key={name} className="partners-grid__item">

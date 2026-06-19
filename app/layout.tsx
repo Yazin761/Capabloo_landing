@@ -1,10 +1,11 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono, Playfair_Display } from "next/font/google";
+import { Geist_Mono, Manrope, Playfair_Display } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
+const manropeSans = Manrope({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const geistMono = Geist_Mono({
@@ -38,7 +39,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${playfair.variable} antialiased`}
+      className={`${manropeSans.variable} ${geistMono.variable} ${playfair.variable} antialiased`}
     >
       <body className="min-h-dvh flex flex-col">{children}</body>
     </html>
